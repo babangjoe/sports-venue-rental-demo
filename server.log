@@ -1,0 +1,169 @@
+  ▲ Next.js 13.5.1
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Ready in 4.3s
+ ✓ Compiled /api/booking/route in 1127ms (148 modules)
+TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+ X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+ X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+[?25h
+ ✓ Compiled in 28ms
+ ✓ Compiled in 2.9s (183 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/user/Documents/Codes/Learn/sports-venue-rental/.next/cache/webpack/client-development/7.pack.gz_' -> '/Users/user/Documents/Codes/Learn/sports-venue-rental/.next/cache/webpack/client-development/7.pack.gz'
+ ✓ Compiled in 289ms (183 modules)
+TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+TypeError [ERR_INVALID_ARG_TYPE]: ThTypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+ X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) {
+  code: 'ERR_INVALITypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+TypeError [ERR_INVALID_ARG_TYPE]: ThTypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at prTypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type numberTypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTramp X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument  X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTramp X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument  X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35)
+    at Signal.callbackTrampoline (node:internal/async_hooks:130:17) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+ X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+ X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+ X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
+ X uncaughtException: TypeError [ERR_INVALID_ARG_TYPE]: The "code" argument must be of type number. Received type string ('SIGTERM')
+    at process.set [as exitCode] (node:internal/bootstrap/node:123:9)
+    at process.exit (node:internal/process/per_thread:179:24)
+    at process.cleanup (/Users/user/Documents/Codes/Learn/sports-venue-rental/node_modules/next/dist/server/lib/start-server.js:208:29)
+    at process.emit (node:events:530:35) {
+  code: 'ERR_INVALID_ARG_TYPE'
+}
