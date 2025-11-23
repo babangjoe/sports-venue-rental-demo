@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 
 const testimonials = [
@@ -61,10 +62,12 @@ export default function TestimonialSection() {
           {/* Main Testimonial */}
           <div className="bg-[#404040] rounded-2xl shadow-xl p-8 md:p-12 relative border border-white/5">
             <div className="text-center mb-8">
-              <img
+              <Image
                 src={testimonials[currentIndex].avatar}
                 alt={testimonials[currentIndex].name}
-                className="w-20 h-20 rounded-full mx-auto mb-4 object-cover ring-4 ring-blue-600/20"
+                width={80}
+                height={80}
+                className="rounded-full mx-auto mb-4 object-cover ring-4 ring-blue-600/20"
               />
               <h4 className="text-2xl font-bold text-white">
                 {testimonials[currentIndex].name}
@@ -80,7 +83,7 @@ export default function TestimonialSection() {
             </div>
 
             <blockquote className="text-xl text-gray-300 text-center leading-relaxed mb-8">
-              "{testimonials[currentIndex].comment}"
+              &quot;{testimonials[currentIndex].comment}&quot;
             </blockquote>
 
             {/* Navigation Buttons */}
