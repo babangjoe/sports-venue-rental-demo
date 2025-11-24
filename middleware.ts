@@ -34,6 +34,16 @@ export function middleware(request: NextRequest) {
         const url = new URL('/admin/fields', request.url);
         return NextResponse.redirect(url);
       }
+      
+      // Cashier role restrictions
+      if (payload.role === 'cashier') {
+        // Cashier can only access /admin/kasir and /booking (public)
+        // If trying to access other admin pages, redirect to /admin/kasir
+        if (!pathname.startsWith('/admin/kasir')) {
+           const url = new URL('/admin/kasir', request.url);
+           return NextResponse.redirect(url);
+        }
+      }
 
       // Add user info to headers for server-side use
       const requestHeaders = new Headers(request.headers);

@@ -40,9 +40,11 @@ export default function SportsManagementPage() {
     const loadSports = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/sports');
+        const response = await fetch('/api/sports?show_all=true');
         if (response.ok) {
-          const sportsData = await response.json();
+          const result = await response.json();
+          // Handle both array (legacy/direct) and { data: [] } formats
+          const sportsData = Array.isArray(result) ? result : (result.data || []);
           setSports(sportsData);
         } else {
           throw new Error('Failed to load sports');

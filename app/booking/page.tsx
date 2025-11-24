@@ -92,8 +92,9 @@ const getSports = async () => {
     if (!response.ok) {
       throw new Error('Failed to fetch sports');
     }
-    const data = await response.json();
-    return data;
+    const result = await response.json();
+    // Handle both array (legacy) and { data: [] } formats
+    return Array.isArray(result) ? result : (result.data || []);
   } catch (error) {
     console.error('Error fetching sports:', error);
     return [];

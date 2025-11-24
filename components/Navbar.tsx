@@ -80,6 +80,12 @@ export default function Navbar() {
                       >
                         Kelola Cabang Olahraga
                       </a>
+                      <a
+                        href="/admin/kasir"
+                        className="block px-4 py-3 text-gray-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5"
+                      >
+                        Kasir
+                      </a>
                       <div className="border-t border-white/10 p-3">
                         <div className="text-xs text-gray-500 mb-2">Logged in as {user.fullName}</div>
                         <button
@@ -156,6 +162,9 @@ export default function Navbar() {
                   </a>
                   <a href="/admin/sports" className="block text-gray-700 hover:text-emerald-600 font-medium py-2 pl-3">
                     Kelola Cabang Olahraga
+                  </a>
+                  <a href="/admin/kasir" className="block text-gray-700 hover:text-emerald-600 font-medium py-2 pl-3">
+                    Kasir
                   </a>
                   <button
                     onClick={() => {
