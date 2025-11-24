@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { readJSON, writeJSON } from '@/lib/json-db';
+import { supabase } from '@/lib/supabase';
 
 // Ensure this route is not statically generated
 export const dynamic = 'force-dynamic';
@@ -25,27 +25,25 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    const sports = await readJSON('sports');
-    const index = sports.findIndex((s: any) => s.id === sportId);
-
-    if (index === -1) {
-       return new Response(
-        JSON.stringify({ error: 'Sport not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const updatedSport = {
-        ...sports[index],
+    const { data: updatedSport, error } = await supabase
+      .from('sports')
+      .update({
         sport_name,
         sport_type,
         description: description || null,
         is_available: is_available ? 1 : 0,
         updated_at: new Date().toISOString()
-    };
+      })
+      .eq('id', sportId)
+      .select()
+      .single();
 
-    sports[index] = updatedSport;
-    await writeJSON('sports', sports);
+    if (error || !updatedSport) {
+       return new Response(
+        JSON.stringify({ error: 'Sport not found or update failed' }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     return new Response(JSON.stringify(updatedSport), {
       status: 200,
@@ -67,27 +65,31 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const sportId = parseInt(params.id);
 
     // Check if sport has any fields
-    const fields = await readJSON('fields');
-    const fieldCount = fields.filter((f: any) => f.sport_id === sportId).length;
+    const { count, error: countError } = await supabase
+      .from('fields')
+      .select('*', { count: 'exact', head: true })
+      .eq('sport_id', sportId);
+
+    if (countError) throw countError;
     
-    if (fieldCount > 0) {
+    if (count && count > 0) {
       return new Response(
         JSON.stringify({ error: 'Cannot delete sport with existing fields. Please delete all related fields first.' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    const sports = await readJSON('sports');
-    const newSports = sports.filter((s: any) => s.id !== sportId);
+    const { error: deleteError } = await supabase
+      .from('sports')
+      .delete()
+      .eq('id', sportId);
 
-    if (newSports.length === sports.length) {
+    if (deleteError) {
       return new Response(
-        JSON.stringify({ error: 'Sport not found' }),
+        JSON.stringify({ error: 'Sport not found or delete failed' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     }
-
-    await writeJSON('sports', newSports);
 
     return new Response(
       JSON.stringify({ message: 'Sport deleted successfully' }),
@@ -106,10 +108,13 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sportId = parseInt(params.id);
-    const sports = await readJSON('sports');
-    const sport = sports.find((s: any) => s.id === sportId);
+    const { data: sport, error } = await supabase
+      .from('sports')
+      .select('*')
+      .eq('id', sportId)
+      .single();
 
-    if (!sport) {
+    if (error || !sport) {
       return new Response(
         JSON.stringify({ error: 'Sport not found' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }

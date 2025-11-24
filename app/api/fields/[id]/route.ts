@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { readJSON, writeJSON } from '@/lib/json-db';
+import { supabase } from '@/lib/supabase';
 
 // Ensure this route is not statically generated
 export const dynamic = 'force-dynamic';
@@ -27,18 +27,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    const fields = await readJSON('fields');
-    const index = fields.findIndex((f: any) => f.id === fieldId);
-
-    if (index === -1) {
-      return new Response(
-        JSON.stringify({ error: 'Field not found' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const updatedField = {
-        ...fields[index],
+    // Update field
+    const { data: updatedField, error: updateError } = await supabase
+      .from('fields')
+      .update({
         field_name,
         field_code,
         sport_id,
@@ -46,14 +38,24 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         description: description || null,
         is_available: is_available ? 1 : 0,
         updated_at: new Date().toISOString()
-    };
+      })
+      .eq('id', fieldId)
+      .select()
+      .single();
 
-    fields[index] = updatedField;
-    await writeJSON('fields', fields);
+    if (updateError || !updatedField) {
+       return new Response(
+        JSON.stringify({ error: 'Field not found or update failed' }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Join with sports
-    const sports = await readJSON('sports');
-    const sport = sports.find((s: any) => s.id === sport_id);
+    const { data: sport } = await supabase
+        .from('sports')
+        .select('*')
+        .eq('id', sport_id)
+        .single();
 
     const result = {
         ...updatedField,
@@ -80,27 +82,31 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const fieldId = parseInt(params.id);
 
     // Check if field has any bookings
-    const bookings = await readJSON('bookings');
-    const bookingCount = bookings.filter((b: any) => b.field_id === fieldId).length;
+    const { count, error: countError } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('field_id', fieldId);
     
-    if (bookingCount > 0) {
+    if (countError) throw countError;
+
+    if (count && count > 0) {
       return new Response(
         JSON.stringify({ error: 'Cannot delete field with existing bookings' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    const fields = await readJSON('fields');
-    const newFields = fields.filter((f: any) => f.id !== fieldId);
+    const { error: deleteError } = await supabase
+        .from('fields')
+        .delete()
+        .eq('id', fieldId);
 
-    if (newFields.length === fields.length) {
+    if (deleteError) {
       return new Response(
-        JSON.stringify({ error: 'Field not found' }),
+        JSON.stringify({ error: 'Field not found or delete failed' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     }
-
-    await writeJSON('fields', newFields);
 
     return new Response(
       JSON.stringify({ message: 'Field deleted successfully' }),
@@ -120,18 +126,24 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   try {
     const fieldId = parseInt(params.id);
 
-    const fields = await readJSON('fields');
-    const field = fields.find((f: any) => f.id === fieldId);
+    const { data: field, error: fieldError } = await supabase
+        .from('fields')
+        .select('*')
+        .eq('id', fieldId)
+        .single();
 
-    if (!field) {
+    if (fieldError || !field) {
       return new Response(
         JSON.stringify({ error: 'Field not found' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    const sports = await readJSON('sports');
-    const sport = sports.find((s: any) => s.id === field.sport_id);
+    const { data: sport } = await supabase
+        .from('sports')
+        .select('*')
+        .eq('id', field.sport_id)
+        .single();
 
     const result = {
         ...field,

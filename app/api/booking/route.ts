@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { readJSON, writeJSON, getNextId } from '@/lib/json-db';
+import { supabase } from '@/lib/supabase';
 
 // Ensure this route is not statically generated
 export const dynamic = 'force-dynamic';
@@ -14,22 +14,28 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date');
     const status = searchParams.get('status');
 
-    let bookings = await readJSON('bookings');
+    let query = supabase
+      .from('bookings')
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (fieldId) {
-      bookings = bookings.filter((b: any) => b.field_id === parseInt(fieldId));
+      query = query.eq('field_id', parseInt(fieldId));
     }
 
     if (date) {
-      bookings = bookings.filter((b: any) => b.booking_date === date);
+      query = query.eq('booking_date', date);
     }
 
     if (status) {
-      bookings = bookings.filter((b: any) => b.booking_status === status);
+      query = query.eq('booking_status', status);
     }
 
-    // Sort by created_at DESC
-    bookings.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const { data: bookings, error } = await query;
+
+    if (error) {
+        throw error;
+    }
 
     return new Response(JSON.stringify(bookings), {
       status: 200,
@@ -68,49 +74,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const bookings = await readJSON('bookings');
-
     // Check for existing bookings for the same field and time slots on the same date
-    const existingBookings = bookings.filter((b: any) => 
-        b.field_id === field_id && 
-        b.booking_date === booking_date && 
-        b.booking_status !== 'cancelled'
-    );
+    // IMPORTANT: field_id must be an integer. If passed as string (e.g. "minisoccer-aa"), Supabase will throw 22P02
+    const fieldIdInt = typeof field_id === 'string' ? parseInt(field_id) : field_id;
+
+    if (isNaN(fieldIdInt)) {
+       return new Response(
+        JSON.stringify({ error: 'Invalid field_id. Must be a number.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { data: existingBookings, error: fetchError } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('field_id', fieldIdInt)
+      .eq('booking_date', booking_date)
+      .neq('booking_status', 'cancelled');
     
+    if (fetchError) throw fetchError;
+
     // Check for time slot conflicts
-    for (const booking of existingBookings) {
-        // In JSON file, time_slots should be an array, but handle string case just in case
-        const existingSlots = Array.isArray(booking.time_slots) ? booking.time_slots : JSON.parse(booking.time_slots || '[]');
-        const hasConflict = time_slots.some((slot: string) => existingSlots.includes(slot));
-        if (hasConflict) {
-            return new Response(
-            JSON.stringify({ error: 'Selected time slots are already booked' }),
-            { status: 409, headers: { 'Content-Type': 'application/json' } }
-            );
+    if (existingBookings) {
+        for (const booking of existingBookings) {
+            const existingSlots = Array.isArray(booking.time_slots) ? booking.time_slots : [];
+            const hasConflict = time_slots.some((slot: string) => existingSlots.includes(slot));
+            if (hasConflict) {
+                return new Response(
+                JSON.stringify({ error: 'Selected time slots are already booked' }),
+                { status: 409, headers: { 'Content-Type': 'application/json' } }
+                );
+            }
         }
     }
 
-    const newId = await getNextId('bookings');
-    const timestamp = new Date().toISOString();
+    const { data: newBooking, error: insertError } = await supabase
+      .from('bookings')
+      .insert([{
+        field_id: fieldIdInt,
+        field_name,
+        booking_date,
+        time_slots, // Supabase handles array -> jsonb automatically
+        total_price,
+        customer_name: customer_name || null,
+        customer_phone: customer_phone || null,
+        customer_email: customer_email || null,
+        booking_status: 'pending',
+        payment_status: 'pending'
+      }])
+      .select()
+      .single();
 
-    const newBooking = {
-      id: newId,
-      field_id,
-      field_name,
-      booking_date,
-      time_slots: time_slots, // Store as array
-      total_price,
-      customer_name: customer_name || null,
-      customer_phone: customer_phone || null,
-      customer_email: customer_email || null,
-      booking_status: 'pending', // Default status
-      payment_status: 'pending', // Default status
-      created_at: timestamp,
-      updated_at: timestamp
-    };
-
-    bookings.push(newBooking);
-    await writeJSON('bookings', bookings);
+    if (insertError) throw insertError;
 
     return new Response(JSON.stringify(newBooking), {
       status: 201,

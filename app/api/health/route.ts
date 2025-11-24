@@ -1,37 +1,26 @@
 import { NextResponse } from 'next/server';
-import { readJSON } from '@/lib/json-db';
-import fs from 'fs';
-import path from 'path';
+import { supabase } from '@/lib/supabase';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const dbDir = path.join(process.cwd(), 'dbjson');
-    const exists = fs.existsSync(dbDir);
+    // Simple query to check connection
+    const { data, error } = await supabase
+      .from('roles')
+      .select('count')
+      .limit(1)
+      .single();
 
-    const tables = ['users', 'roles', 'sports', 'fields'];
-    const foundTables = [];
-
-    for (const table of tables) {
-        const data = await readJSON(table);
-        // We consider the table exists if readJSON returns an array (even empty)
-        // readJSON returns [] if file doesn't exist, so we check file existence explicitly if we want to be strict,
-        // but for now, if readJSON works, it's good. 
-        // Actually readJSON catches errors and returns [].
-        // Let's check file existence properly.
-        if (fs.existsSync(path.join(dbDir, `${table}.json`))) {
-            foundTables.push(table);
-        }
-    }
+    if (error) throw error;
 
     return NextResponse.json({
       status: 'healthy',
       database: {
-        connected: exists,
-        storage: 'json',
-        tablesFound: foundTables.length,
-        tables: foundTables
-      },
-      timestamp: new Date().toISOString()
+        connected: true,
+        storage: 'supabase',
+        timestamp: new Date().toISOString()
+      }
     });
 
   } catch (error) {
@@ -41,7 +30,8 @@ export async function GET() {
       status: 'unhealthy',
       database: {
         connected: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        storage: 'supabase'
       },
       timestamp: new Date().toISOString()
     }, { status: 500 });

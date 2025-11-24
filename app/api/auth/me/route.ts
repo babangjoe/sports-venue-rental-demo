@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { readJSON } from '@/lib/json-db';
+import { supabase } from '@/lib/supabase';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -19,20 +19,27 @@ export async function GET(request: NextRequest) {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
 
     // Get fresh user data from database
-    const users = await readJSON('users');
-    const userRecord = users.find((u: any) => u.id === decoded.userId && u.is_active === 1);
+    const { data: userRecord, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', decoded.userId)
+      .eq('is_active', 1)
+      .single();
 
-    if (!userRecord) {
+    if (userError || !userRecord) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 401 }
       );
     }
 
-    const roles = await readJSON('roles');
-    const role = roles.find((r: any) => r.id === userRecord.role_id);
+    const { data: role, error: roleError } = await supabase
+      .from('roles')
+      .select('*')
+      .eq('id', userRecord.role_id)
+      .single();
 
-    if (!role) {
+    if (roleError || !role) {
          return NextResponse.json(
         { error: 'Role not found' },
         { status: 500 }

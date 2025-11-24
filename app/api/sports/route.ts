@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { readJSON, writeJSON, getNextId } from '@/lib/json-db';
+import { supabase } from '@/lib/supabase';
 
 // Ensure this route is not statically generated
 export const dynamic = 'force-dynamic';
@@ -13,19 +13,23 @@ export async function GET(request: NextRequest) {
     const isAvailable = searchParams.get('isAvailable');
     const sportType = searchParams.get('sportType');
 
-    let sports = await readJSON('sports');
+    let query = supabase
+      .from('sports')
+      .select('*')
+      .order('sport_name', { ascending: true });
 
     if (isAvailable !== null) {
       const availableValue = isAvailable === 'true' || isAvailable === '1' ? 1 : 0;
-      sports = sports.filter((sport: any) => sport.is_available === availableValue);
+      query = query.eq('is_available', availableValue);
     }
 
     if (sportType) {
-      sports = sports.filter((sport: any) => sport.sport_type === sportType);
+      query = query.eq('sport_type', sportType);
     }
 
-    // Sort by sport_name
-    sports.sort((a: any, b: any) => a.sport_name.localeCompare(b.sport_name));
+    const { data: sports, error } = await query;
+
+    if (error) throw error;
 
     return new Response(JSON.stringify(sports), {
       status: 200,
@@ -60,22 +64,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const sports = await readJSON('sports');
-    const newId = await getNextId('sports');
-    const timestamp = new Date().toISOString();
-
-    const newSport = {
-        id: newId,
+    const { data: newSport, error } = await supabase
+      .from('sports')
+      .insert([{
         sport_name,
         sport_type,
         description: description || null,
-        is_available: is_available ? 1 : 0,
-        created_at: timestamp,
-        updated_at: timestamp
-    };
+        is_available: is_available ? 1 : 0
+      }])
+      .select()
+      .single();
 
-    sports.push(newSport);
-    await writeJSON('sports', sports);
+    if (error) throw error;
 
     return new Response(JSON.stringify(newSport), {
       status: 201,

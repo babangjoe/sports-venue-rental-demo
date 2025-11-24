@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { readJSON, writeJSON, getNextId } from '@/lib/json-db';
+import { supabase } from '@/lib/supabase';
 
 // Ensure this route is not statically generated
 export const dynamic = 'force-dynamic';
@@ -14,33 +14,37 @@ export async function GET(request: NextRequest) {
     const sportId = searchParams.get('sportId');
     const fieldCode = searchParams.get('fieldCode');
 
-    const fields = await readJSON('fields');
-    const sports = await readJSON('sports');
+    let query = supabase
+      .from('fields')
+      .select('*, sports(sport_name, sport_type)')
+      .order('field_name', { ascending: true });
 
-    let result = fields.map((field: any) => {
-        const sport = sports.find((s: any) => s.id === field.sport_id);
+    if (isAvailable !== null) {
+      const availableValue = isAvailable === 'true' || isAvailable === '1' ? 1 : 0;
+      query = query.eq('is_available', availableValue);
+    }
+
+    if (sportId) {
+      query = query.eq('sport_id', parseInt(sportId));
+    }
+
+    if (fieldCode) {
+      query = query.eq('field_code', fieldCode);
+    }
+
+    const { data: fields, error } = await query;
+
+    if (error) throw error;
+
+    const result = fields.map((field: any) => {
+        const sport = field.sports; // Supabase returns joined data in nested object
+        const { sports, ...fieldData } = field; // Remove nested object
         return {
-            ...field,
+            ...fieldData,
             sport_name: sport ? sport.sport_name : null,
             sport_type: sport ? sport.sport_type : null
         };
     });
-
-    if (isAvailable !== null) {
-      const availableValue = isAvailable === 'true' || isAvailable === '1' ? 1 : 0;
-      result = result.filter((f: any) => f.is_available === availableValue);
-    }
-
-    if (sportId) {
-      result = result.filter((f: any) => f.sport_id === parseInt(sportId));
-    }
-
-    if (fieldCode) {
-      result = result.filter((f: any) => f.field_code === fieldCode);
-    }
-
-    // Sort by field_name
-    result.sort((a: any, b: any) => a.field_name.localeCompare(b.field_name));
 
     return new Response(JSON.stringify(result), {
       status: 200,
@@ -77,28 +81,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const fields = await readJSON('fields');
-    const newId = await getNextId('fields');
-    const timestamp = new Date().toISOString();
-
-    const newField = {
-        id: newId,
+    const { data: newField, error: insertError } = await supabase
+      .from('fields')
+      .insert([{
         field_name,
         field_code,
         sport_id,
         price_per_hour,
         description: description || null,
-        is_available: is_available ? 1 : 0,
-        created_at: timestamp,
-        updated_at: timestamp
-    };
+        is_available: is_available ? 1 : 0
+      }])
+      .select()
+      .single();
 
-    fields.push(newField);
-    await writeJSON('fields', fields);
+    if (insertError) throw insertError;
 
     // Return with joined sport info
-    const sports = await readJSON('sports');
-    const sport = sports.find((s: any) => s.id === sport_id);
+    const { data: sport } = await supabase
+      .from('sports')
+      .select('*')
+      .eq('id', sport_id)
+      .single();
 
     const result = {
         ...newField,

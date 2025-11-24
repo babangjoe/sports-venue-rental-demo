@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readJSON } from '@/lib/json-db';
+import { supabase } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -17,10 +17,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user
-    const users = await readJSON('users');
-    const userRecord = users.find((u: any) => u.username === username && u.is_active === 1);
+    const { data: userRecord, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .eq('is_active', 1)
+      .single();
 
-    if (!userRecord) {
+    if (userError || !userRecord) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -28,10 +32,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Get role
-    const roles = await readJSON('roles');
-    const role = roles.find((r: any) => r.id === userRecord.role_id);
+    const { data: role, error: roleError } = await supabase
+      .from('roles')
+      .select('*')
+      .eq('id', userRecord.role_id)
+      .single();
 
-    if (!role) {
+    if (roleError || !role) {
         console.error('Role not found for user:', userRecord.username);
         return NextResponse.json(
             { error: 'Configuration error: User role not found' },

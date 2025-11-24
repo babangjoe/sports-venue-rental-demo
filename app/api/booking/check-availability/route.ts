@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { readJSON } from '@/lib/json-db';
+import { supabase } from '@/lib/supabase';
 
 // Ensure this route is not statically generated
 export const dynamic = 'force-dynamic';
@@ -19,31 +19,45 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const bookings = await readJSON('bookings');
+    const fieldIdInt = parseInt(fieldId);
+    if (isNaN(fieldIdInt)) {
+       return new Response(
+        JSON.stringify({ error: 'Invalid fieldId. Must be a number.' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Query for existing bookings for this field and date that are not cancelled
-    const relevantBookings = bookings.filter((b: any) => 
-        b.field_id === parseInt(fieldId) &&
-        b.booking_date === date &&
-        b.booking_status !== 'cancelled'
-    );
+    const { data: relevantBookings, error } = await supabase
+      .from('bookings')
+      .select('time_slots')
+      .eq('field_id', fieldIdInt)
+      .eq('booking_date', date)
+      .neq('booking_status', 'cancelled');
+
+    if (error) throw error;
     
     // Extract all booked time slots from the results
     const bookedSlots: string[] = [];
-    relevantBookings.forEach((row: any) => {
-      let slots: string[];
-      if (Array.isArray(row.time_slots)) {
-        // Time slots is already an array
-        slots = row.time_slots;
-      } else if (typeof row.time_slots === 'string') {
-        // Time slots is a JSON string that needs to be parsed
-        slots = JSON.parse(row.time_slots);
-      } else {
-        // Handle case where it might be an object
-        slots = row.time_slots as string[] || [];
-      }
-      bookedSlots.push(...slots);
-    });
+    if (relevantBookings) {
+        relevantBookings.forEach((row: any) => {
+          let slots: string[];
+          if (Array.isArray(row.time_slots)) {
+            // Time slots is already an array
+            slots = row.time_slots;
+          } else if (typeof row.time_slots === 'string') {
+            // Time slots is a JSON string that needs to be parsed
+            try {
+                slots = JSON.parse(row.time_slots);
+            } catch (e) {
+                slots = [];
+            }
+          } else {
+            // Handle case where it might be an object
+            slots = row.time_slots as string[] || [];
+          }
+          bookedSlots.push(...slots);
+        });
+    }
 
     // Remove duplicates
     const uniqueBookedSlots = Array.from(new Set(bookedSlots));

@@ -21,6 +21,16 @@ const timeSlots = [
 // Function to fetch booked time slots from API
 const getBookedSlots = async (fieldId: string, date: string) => {
   try {
+    // In booking form, fieldId might be passed as string from select value
+    // but if it comes from database it's a number.
+    // Ensure we pass it correctly.
+    
+    // Check if fieldId is a valid number string
+    if (!fieldId || isNaN(Number(fieldId))) {
+         console.error('Invalid fieldId:', fieldId);
+         return [];
+    }
+
     const response = await fetch(`/api/booking/check-availability?fieldId=${fieldId}&date=${date}`);
     if (!response.ok) {
       throw new Error('Failed to fetch availability');
@@ -150,7 +160,7 @@ export default function BookingPage() {
           const sportFields = fields
             .filter((field: any) => field.sport_id === sport.id)
             .map((field: any) => ({
-              id: field.field_code,
+              id: String(field.id), // Ensure ID is string for select value
               name: field.field_name,
               price: parseFloat(field.price_per_hour)
             }));
