@@ -62,7 +62,9 @@ export default function SportsSection() {
       try {
         const response = await fetch('/api/sports');
         const result = await response.json();
-        if (result.data) {
+        if (Array.isArray(result)) {
+          setSports(result);
+        } else if (result.data) {
           setSports(result.data);
         }
       } catch (error) {
