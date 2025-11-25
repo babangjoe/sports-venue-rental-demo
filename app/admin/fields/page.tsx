@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Target, MapPin, DollarSign, Edit, Trash2, CheckCircle, XCircle, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
 // Data struktur untuk ikon olahraga
 const sportIcons = {
@@ -209,20 +210,28 @@ export default function FieldManagementPage() {
       // Upload new images
       if (newImages.length > 0) {
         for (const file of newImages) {
-            const uploadFormData = new FormData();
-            uploadFormData.append('file', file);
+            // Generate unique filename
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
 
-            const uploadResponse = await fetch('/api/upload', {
-              method: 'POST',
-              body: uploadFormData,
-            });
+            // Upload to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from('sports-center-demo-images')
+                .upload(fileName, file);
 
-            if (!uploadResponse.ok) {
-              throw new Error('Gagal mengupload salah satu gambar');
+            if (uploadError) {
+                console.error('Upload error:', uploadError);
+                throw new Error('Gagal mengupload gambar ke Storage');
             }
 
-            const uploadResult = await uploadResponse.json();
-            uploadedUrls.push(uploadResult.url);
+            // Get Public URL
+            const { data: urlData } = supabase.storage
+                .from('sports-center-demo-images')
+                .getPublicUrl(fileName);
+
+            if (urlData && urlData.publicUrl) {
+                uploadedUrls.push(urlData.publicUrl);
+            }
         }
       }
 

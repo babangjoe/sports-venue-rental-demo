@@ -42,3 +42,6 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# public/img_lapangan
+/public/img_lapangan
