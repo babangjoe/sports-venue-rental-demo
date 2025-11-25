@@ -16,6 +16,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       sport_id,
       price_per_hour,
       description,
+      url_image,
+      images, // Array of strings
       is_available = true
     } = body;
 
@@ -36,6 +38,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         sport_id,
         price_per_hour,
         description: description || null,
+        url_image: url_image || (images && images.length > 0 ? images[0] : null),
         is_available: is_available ? 1 : 0,
         updated_at: new Date().toISOString()
       })
@@ -50,6 +53,29 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
+    // Handle images update (Replace logic)
+    if (images && Array.isArray(images)) {
+        // 1. Delete existing images
+        await supabase
+            .from('field_images')
+            .delete()
+            .eq('field_id', fieldId);
+        
+        // 2. Insert new images
+        const imagesToInsert = images.map((url: string) => ({
+            field_id: fieldId,
+            url_image: url
+        }));
+
+        if (imagesToInsert.length > 0) {
+            const { error: imagesError } = await supabase
+                .from('field_images')
+                .insert(imagesToInsert);
+            
+            if (imagesError) console.error('Error updating field images:', imagesError);
+        }
+    }
+
     // Join with sports
     const { data: sport } = await supabase
         .from('sports')
@@ -57,10 +83,17 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         .eq('id', sport_id)
         .single();
 
+    // Get updated images
+    const { data: updatedImages } = await supabase
+        .from('field_images')
+        .select('url_image')
+        .eq('field_id', fieldId);
+
     const result = {
         ...updatedField,
         sport_name: sport ? sport.sport_name : null,
-        sport_type: sport ? sport.sport_type : null
+        sport_type: sport ? sport.sport_type : null,
+        images: updatedImages ? updatedImages.map(i => i.url_image) : []
     };
 
     return new Response(JSON.stringify(result), {
@@ -128,7 +161,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const { data: field, error: fieldError } = await supabase
         .from('fields')
-        .select('*')
+        .select('*, sports(sport_name, sport_type)')
         .eq('id', fieldId)
         .single();
 
@@ -139,16 +172,23 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    const { data: sport } = await supabase
-        .from('sports')
-        .select('*')
-        .eq('id', field.sport_id)
-        .single();
+    // Manually fetch images
+    const { data: imagesData } = await supabase
+        .from('field_images')
+        .select('url_image')
+        .eq('field_id', fieldId);
+    
+    const images = imagesData ? imagesData.map((img: any) => img.url_image) : [];
+
+    const { sports, ...fieldData } = field;
+    const sport = field.sports;
 
     const result = {
-        ...field,
+        ...fieldData,
         sport_name: sport ? sport.sport_name : null,
-        sport_type: sport ? sport.sport_type : null
+        sport_type: sport ? sport.sport_type : null,
+        images: images,
+        url_image: images.length > 0 ? images[0] : fieldData.url_image
     };
 
     return new Response(JSON.stringify(result), {

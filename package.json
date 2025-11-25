@@ -49,6 +49,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.2.3",
     "embla-carousel-react": "^8.3.0",
     "eslint": "8.49.0",
     "eslint-config-next": "13.5.1",
@@ -69,12 +70,14 @@
     "tailwindcss": "3.3.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.2.2",
+    "uuid": "^13.0.0",
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.14.7",
     "@playwright/test": "^1.55.1",
-    "@types/jsonwebtoken": "^9.0.10"
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/uuid": "^10.0.0"
   }
 }

@@ -205,7 +205,6 @@ export default function CashierPage() {
         amount: total,
         user_name: 'Cashier',
         booking_ids: bookingIds,
-        // In future, we can send detail items here
         items: cart.map(item => ({
           type: item.type,
           id: item.id,
@@ -305,6 +304,21 @@ export default function CashierPage() {
                         {new Date(paymentSuccess.payment.created_at).toLocaleDateString('id-ID')}
                       </span>
                     </div>
+
+                    {/* Item Details */}
+                    <div className="border-t border-dashed border-gray-200 my-3 pt-3 space-y-2">
+                      {cart.map((item, idx) => (
+                        <div key={idx} className="flex justify-between text-xs">
+                          <span className="text-gray-600 truncate max-w-[70%]">
+                            {item.quantity}x {item.name}
+                          </span>
+                          <span className="text-gray-800 font-medium">
+                            {formatCurrency(item.price * item.quantity)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
                     <div className="flex justify-between text-sm border-t pt-2 mt-2">
                       <span className="text-gray-500">Total Bayar</span>
                       <span className="font-bold text-emerald-600">

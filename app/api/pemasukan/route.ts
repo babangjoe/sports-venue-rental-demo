@@ -1,6 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const invoice = searchParams.get('invoice');
+
+    let query = supabase
+      .from('pemasukan')
+      .select(`
+        *,
+        pemasukan_detail (*),
+        bookings (
+          *,
+          fields (field_name)
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (id) {
+      query = query.eq('id', id);
+    }
+    if (invoice) {
+      query = query.eq('nomor_invoice', invoice);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error fetching pemasukan:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -18,16 +54,18 @@ export async function POST(request: NextRequest) {
         allBookingIds = [booking_id];
     }
 
-    // 1. Validate Bookings (Optional but good)
+    // 1. Validate Bookings
+    let bookingDetails: any[] = [];
     if (allBookingIds.length > 0) {
-        const { error: bookingError } = await supabase
+        const { data: bookings, error: bookingError } = await supabase
             .from('bookings')
-            .select('id')
+            .select('*')
             .in('id', allBookingIds);
         
         if (bookingError) {
             return NextResponse.json({ error: 'Error validating bookings' }, { status: 500 });
         }
+        bookingDetails = bookings || [];
     }
 
     // 2. Generate Invoice Number
@@ -73,7 +111,22 @@ export async function POST(request: NextRequest) {
 
     if (paymentError) throw paymentError;
 
-    // 4. Update Booking Status (for all linked bookings)
+    const pemasukanDetailsToInsert = [];
+
+    // 4. Add Booking Details to Invoice
+    for (const booking of bookingDetails) {
+        pemasukanDetailsToInsert.push({
+            pemasukan_id: payment.id,
+            nomor_invoice: payment.nomor_invoice,
+            barang_id: null,
+            nama_barang: `Sewa Lapangan: ${booking.field_name} (${booking.booking_date})`,
+            harga_satuan: booking.total_price,
+            qty: 1,
+            subtotal: booking.total_price
+        });
+    }
+
+    // 5. Update Booking Status (for all linked bookings)
     if (allBookingIds.length > 0) {
         const { error: updateError } = await supabase
             .from('bookings')
@@ -87,25 +140,52 @@ export async function POST(request: NextRequest) {
         if (updateError) throw updateError;
     }
 
-    // 5. Process Items (Stock Deduction)
+    // 6. Process Items (Stock Deduction) and Add to Invoice Details
     if (items && Array.isArray(items)) {
         for (const item of items) {
             if (item.type === 'barang') {
-                // Fetch current stock
+                // Fetch current stock and details
                 const { data: currentItem } = await supabase
                     .from('barang')
-                    .select('stok')
+                    .select('id, nama_barang, harga, stok')
                     .eq('id', item.id)
                     .single();
                 
                 if (currentItem) {
-                    const newStock = Math.max(0, currentItem.stok - item.quantity);
+                    const qty = Number(item.quantity) || 1;
+                    const newStock = Math.max(0, currentItem.stok - qty);
+                    
+                    // Update Stock
                     await supabase
                         .from('barang')
                         .update({ stok: newStock })
                         .eq('id', item.id);
+
+                    // Add to invoice details
+                    pemasukanDetailsToInsert.push({
+                        pemasukan_id: payment.id,
+                        nomor_invoice: payment.nomor_invoice,
+                        barang_id: currentItem.id,
+                        nama_barang: currentItem.nama_barang,
+                        harga_satuan: currentItem.harga,
+                        qty: qty,
+                        subtotal: Number(currentItem.harga) * qty
+                    });
                 }
             }
+        }
+    }
+
+    // 7. Insert Pemasukan Details
+    if (pemasukanDetailsToInsert.length > 0) {
+        const { error: detailsError } = await supabase
+            .from('pemasukan_detail')
+            .insert(pemasukanDetailsToInsert);
+        
+        if (detailsError) {
+            console.error('Error inserting pemasukan details:', detailsError);
+            // Note: We don't rollback the main payment here as Supabase client doesn't support transactions easily
+            // in this context without RPC. But ideally this should be atomic.
         }
     }
 

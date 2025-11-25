@@ -120,7 +120,10 @@ const getFields = async (sportId?: number) => {
   }
 };
 
+import { useSearchParams } from 'next/navigation';
+
 export default function BookingPage() {
+  const searchParams = useSearchParams();
   const [sportsData, setSportsData] = useState<Record<string, { name: string; icon: any; fields: Array<{ id: string; name: string; price: number }> }>>({});
   const [sportsList, setSportsList] = useState<any[]>([]);
   const [fieldsList, setFieldsList] = useState<any[]>([]);
@@ -174,6 +177,24 @@ export default function BookingPage() {
         });
 
         setSportsData(transformedSportsData);
+
+        // Handle query parameters after data is loaded
+        const sportParam = searchParams.get('sport');
+        const fieldParam = searchParams.get('field');
+
+        if (sportParam && transformedSportsData[sportParam]) {
+            setSelectedSport(sportParam);
+            setFormData(prev => ({ ...prev, sport: sportParam }));
+            
+            if (fieldParam) {
+                // Check if field exists in the selected sport
+                const fieldExists = transformedSportsData[sportParam].fields.some(f => f.id === fieldParam);
+                if (fieldExists) {
+                    setSelectedField(fieldParam);
+                    setFormData(prev => ({ ...prev, sport: sportParam, field: fieldParam }));
+                }
+            }
+        }
       } catch (error) {
         console.error('Error loading sports and fields:', error);
       } finally {
@@ -182,7 +203,8 @@ export default function BookingPage() {
     };
 
     loadSportsAndFields();
-  }, []);
+  }, [searchParams]);
+
 
   const handleSportChange = async (sport: string) => {
     setSelectedSport(sport);

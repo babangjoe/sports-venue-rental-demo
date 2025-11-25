@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Target, MapPin, DollarSign, Edit, Trash2, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Target, MapPin, DollarSign, Edit, Trash2, CheckCircle, XCircle, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 
 // Data struktur untuk ikon olahraga
@@ -27,6 +27,8 @@ interface Field {
   sport_id: number;
   price_per_hour: number;
   description?: string;
+  url_image?: string;
+  images?: string[];
   is_available: boolean;
   sport_name?: string;
   sport_type?: string;
@@ -45,8 +47,17 @@ export default function FieldManagementPage() {
     sport_id: '',
     price_per_hour: '',
     description: '',
+    url_image: '', // For compatibility/single display
     is_available: true
   });
+  
+  // Image handling state
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [previewImage, setPreviewImage] = useState<string | null>(null); // For current preview
+  const [tempFile, setTempFile] = useState<File | null>(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -79,12 +90,94 @@ export default function FieldManagementPage() {
     loadData();
   }, []);
 
+  // Toggle body scroll when modal is open
+  useEffect(() => {
+    if (showAddForm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [showAddForm]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
+    
+    if (name === 'price_per_hour') {
+        // Allow only numbers
+        const numericValue = value.replace(/\D/g, '');
+        // Format with dots
+        const formattedValue = new Intl.NumberFormat('id-ID').format(Number(numericValue));
+        setFormData(prev => ({ ...prev, [name]: numericValue ? formattedValue : '' }));
+    } else {
+        setFormData(prev => ({
+          ...prev,
+          [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+        }));
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Check total images limit
+      if (existingImages.length + newImages.length >= 3) {
+        setMessage({ type: 'error', text: 'Maksimal 3 gambar per lapangan' });
+        e.target.value = '';
+        return;
+      }
+
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/tiff'];
+      if (!validTypes.includes(file.type)) {
+        setMessage({ type: 'error', text: 'Format file harus .jpg, .jpeg, .png, atau .tif' });
+        e.target.value = '';
+        return;
+      }
+
+      // Basic validation (size < 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setMessage({ type: 'error', text: 'Ukuran file maksimal 2MB' });
+        e.target.value = '';
+        return;
+      }
+
+      // Create preview URL
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewImage(objectUrl);
+      setTempFile(file);
+      setShowPreviewModal(true);
+      
+      // Clear input value to allow re-selecting same file if cancelled
+      e.target.value = '';
+      setMessage(null);
+    }
+  };
+
+  const confirmFileSelection = () => {
+    if (tempFile) {
+      setNewImages(prev => [...prev, tempFile]);
+      setTempFile(null);
+      setPreviewImage(null);
+      setShowPreviewModal(false);
+    }
+  };
+
+  const cancelFileSelection = () => {
+    setTempFile(null);
+    setPreviewImage(null);
+    setShowPreviewModal(false);
+  };
+
+  const removeNewImage = (index: number) => {
+    setNewImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (index: number) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const resetForm = () => {
@@ -94,8 +187,13 @@ export default function FieldManagementPage() {
       sport_id: '',
       price_per_hour: '',
       description: '',
+      url_image: '',
       is_available: true
     });
+    setExistingImages([]);
+    setNewImages([]);
+    setTempFile(null);
+    setPreviewImage(null);
     setEditingField(null);
     setShowAddForm(false);
   };
@@ -106,10 +204,37 @@ export default function FieldManagementPage() {
     setMessage(null);
 
     try {
+      let uploadedUrls: string[] = [];
+
+      // Upload new images
+      if (newImages.length > 0) {
+        for (const file of newImages) {
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', file);
+
+            const uploadResponse = await fetch('/api/upload', {
+              method: 'POST',
+              body: uploadFormData,
+            });
+
+            if (!uploadResponse.ok) {
+              throw new Error('Gagal mengupload salah satu gambar');
+            }
+
+            const uploadResult = await uploadResponse.json();
+            uploadedUrls.push(uploadResult.url);
+        }
+      }
+
+      // Combine existing URLs with new uploaded URLs
+      const finalImages = [...existingImages, ...uploadedUrls];
+
       const fieldData = {
         ...formData,
         sport_id: parseInt(formData.sport_id),
-        price_per_hour: parseFloat(formData.price_per_hour)
+        price_per_hour: parseFloat(formData.price_per_hour.replace(/\./g, '')), // Remove dots before sending
+        url_image: finalImages.length > 0 ? finalImages[0] : '', // Main image
+        images: finalImages // All images
       };
 
       const url = editingField ? `/api/fields/${editingField.id}` : '/api/fields';
@@ -141,9 +266,9 @@ export default function FieldManagementPage() {
         const errorData = await response.json();
         setMessage({ type: 'error', text: errorData.error || 'Gagal menyimpan lapangan' });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting form:', error);
-      setMessage({ type: 'error', text: 'Terjadi kesalahan saat menyimpan' });
+      setMessage({ type: 'error', text: error.message || 'Terjadi kesalahan saat menyimpan' });
     } finally {
       setSubmitting(false);
     }
@@ -155,10 +280,21 @@ export default function FieldManagementPage() {
       field_name: field.field_name,
       field_code: field.field_code,
       sport_id: field.sport_id.toString(),
-      price_per_hour: field.price_per_hour.toString(),
+      price_per_hour: new Intl.NumberFormat('id-ID').format(field.price_per_hour), // Format on load
       description: field.description || '',
+      url_image: field.url_image || '',
       is_available: field.is_available
     });
+    
+    // Load existing images (from field.images array if available, or url_image fallback)
+    if (field.images && field.images.length > 0) {
+        setExistingImages(field.images);
+    } else if (field.url_image) {
+        setExistingImages([field.url_image]);
+    } else {
+        setExistingImages([]);
+    }
+    setNewImages([]);
     setShowAddForm(true);
   };
 
@@ -303,148 +439,242 @@ export default function FieldManagementPage() {
           </div>
         </div>
 
-        {/* Add/Edit Form */}
+        {/* Add/Edit Form Modal */}
         {showAddForm && (
-          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {editingField ? 'Edit Lapangan' : 'Tambah Lapangan Baru'}
-            </h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Field Name */}
-                <div>
-                  <label htmlFor="field_name" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                    <MapPin className="h-5 w-5 text-emerald-600" />
-                    <span>Nama Lapangan</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="field_name"
-                    name="field_name"
-                    value={formData.field_name}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="Contoh: Lapangan Futsal A"
-                  />
-                </div>
-
-                {/* Field Code */}
-                <div>
-                  <label htmlFor="field_code" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                    <Target className="h-5 w-5 text-blue-600" />
-                    <span>Kode Lapangan</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="field_code"
-                    name="field_code"
-                    value={formData.field_code}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="Contoh: FUTSAL-A"
-                  />
-                </div>
-
-                {/* Sport Selection */}
-                <div>
-                  <label htmlFor="sport_id" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                    <Target className="h-5 w-5 text-purple-600" />
-                    <span>Cabang Olahraga</span>
-                  </label>
-                  <select
-                    id="sport_id"
-                    name="sport_id"
-                    value={formData.sport_id}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                  >
-                    <option value="">Pilih cabang olahraga</option>
-                    {sports.map((sport) => (
-                      <option key={sport.id} value={sport.id}>
-                        {sport.sport_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Price per Hour */}
-                <div>
-                  <label htmlFor="price_per_hour" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                    <DollarSign className="h-5 w-5 text-green-600" />
-                    <span>Harga per Jam</span>
-                  </label>
-                  <input
-                    type="number"
-                    id="price_per_hour"
-                    name="price_per_hour"
-                    value={formData.price_per_hour}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                    step="1000"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                    placeholder="Contoh: 150000"
-                  />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label htmlFor="description" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                  <span>Deskripsi (Opsional)</span>
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                  placeholder="Deskripsi lapangan, fasilitas, dll."
-                />
-              </div>
-
-              {/* Available Status */}
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="is_available"
-                  name="is_available"
-                  checked={formData.is_available}
-                  onChange={handleInputChange}
-                  className="h-5 w-5 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-                />
-                <label htmlFor="is_available" className="text-gray-700 font-medium">
-                  Lapangan tersedia untuk booking
-                </label>
-              </div>
-
-              {/* Form Actions */}
-              <div className="flex space-x-4 pt-6">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className={`px-8 py-3 rounded-2xl font-semibold transition-all shadow-lg ${
-                    submitting
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:scale-105'
-                  }`}
-                >
-                  {submitting ? 'Menyimpan...' : (editingField ? 'Perbarui' : 'Tambah')}
-                </button>
-                <button
-                  type="button"
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-hidden">
+            <div 
+                className="absolute inset-0" 
+                onClick={resetForm} // Clicking outside modal closes it (optional, remove if not wanted)
+            ></div>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl relative flex flex-col max-h-[90vh] z-10">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {editingField ? 'Edit Lapangan' : 'Tambah Lapangan Baru'}
+                </h2>
+                <button 
                   onClick={resetForm}
-                  className="px-8 py-3 border border-gray-300 text-gray-700 rounded-2xl font-semibold hover:bg-gray-50 transition-all"
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  Batal
+                  <XCircle className="h-6 w-6" />
                 </button>
               </div>
-            </form>
+              
+              {/* Modal Body - Scrollable */}
+              <div className="p-8 overflow-y-auto">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Field Name */}
+                    <div>
+                      <label htmlFor="field_name" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
+                        <MapPin className="h-5 w-5 text-emerald-600" />
+                        <span>Nama Lapangan</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="field_name"
+                        name="field_name"
+                        value={formData.field_name}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        placeholder="Contoh: Lapangan Futsal A"
+                      />
+                    </div>
+
+                    {/* Field Code */}
+                    <div>
+                      <label htmlFor="field_code" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
+                        <Target className="h-5 w-5 text-blue-600" />
+                        <span>Kode Lapangan</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="field_code"
+                        name="field_code"
+                        value={formData.field_code}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="Contoh: FUTSAL-A"
+                      />
+                    </div>
+
+                    {/* Sport Selection */}
+                    <div>
+                      <label htmlFor="sport_id" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
+                        <Target className="h-5 w-5 text-purple-600" />
+                        <span>Cabang Olahraga</span>
+                      </label>
+                      <select
+                        id="sport_id"
+                        name="sport_id"
+                        value={formData.sport_id}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      >
+                        <option value="">Pilih cabang olahraga</option>
+                        {sports.map((sport) => (
+                          <option key={sport.id} value={sport.id}>
+                            {sport.sport_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Price per Hour */}
+                    <div>
+                      <label htmlFor="price_per_hour" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
+                        <DollarSign className="h-5 w-5 text-green-600" />
+                        <span>Harga per Jam</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="price_per_hour"
+                        name="price_per_hour"
+                        value={formData.price_per_hour}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                        placeholder="Contoh: 150.000"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Image Upload */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                        {existingImages.length + newImages.length < 3 ? (
+                          <>
+                            <input
+                                type="file"
+                                id="file_upload"
+                                accept=".jpg,.jpeg,.png,.tif,.tiff"
+                                onChange={handleFileChange}
+                                className="hidden"
+                            />
+                            <label 
+                              htmlFor="file_upload"
+                              className="cursor-pointer inline-flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors text-sm font-semibold border border-blue-200"
+                            >
+                               <Plus className="h-4 w-4 mr-2" />
+                               Tambah Gambar
+                            </label>
+                          </>
+                        ) : (
+                           <div className="text-sm text-gray-500 italic">Maksimal 3 gambar tercapai</div>
+                        )}
+
+                        <label className="flex items-center space-x-2 text-gray-700 font-medium">
+                          <ImageIcon className="h-5 w-5 text-blue-600" />
+                          <span>Gambar Lapangan ({existingImages.length + newImages.length}/3)</span>
+                        </label>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4">
+                        {/* Existing Images List */}
+                        {existingImages.map((url, idx) => (
+                          <div key={`exist-${idx}`} className="relative group aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                            <img src={url} alt={`Field ${idx}`} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeExistingImage(idx)}
+                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 text-center truncate">
+                              Existing
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* New Images List */}
+                        {newImages.map((file, idx) => (
+                          <div key={`new-${idx}`} className="relative group aspect-video bg-blue-50 rounded-lg overflow-hidden border border-blue-200">
+                            <div className="w-full h-full flex items-center justify-center text-blue-500 font-bold text-xs truncate px-2">
+                                {file.name}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeNewImage(idx)}
+                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                            <div className="absolute bottom-0 left-0 right-0 bg-blue-600 text-white text-xs p-1 text-center">
+                              New
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+
+                    {/* Empty State */}
+                    {(existingImages.length === 0 && newImages.length === 0) && (
+                        <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 mt-4">
+                            <ImageIcon className="h-8 w-8 mb-2 opacity-50" />
+                            <span className="text-sm">Belum ada gambar</span>
+                            <span className="text-xs mt-1">Format: .jpg, .png (Max 2MB)</span>
+                        </div>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label htmlFor="description" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
+                      <span>Deskripsi (Opsional)</span>
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                      placeholder="Deskripsi lapangan, fasilitas, dll."
+                    />
+                  </div>
+
+                  {/* Available Status */}
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="is_available"
+                      name="is_available"
+                      checked={formData.is_available}
+                      onChange={handleInputChange}
+                      className="h-5 w-5 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="is_available" className="text-gray-700 font-medium">
+                      Lapangan tersedia untuk booking
+                    </label>
+                  </div>
+
+                  {/* Form Actions */}
+                  <div className="flex space-x-4 pt-2">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className={`flex-1 py-3 rounded-2xl font-semibold transition-all shadow-lg ${
+                        submitting
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:scale-105'
+                      }`}
+                    >
+                      {submitting ? 'Menyimpan...' : (editingField ? 'Perbarui' : 'Tambah')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-2xl font-semibold hover:bg-gray-50 transition-all"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         )}
 
@@ -555,6 +785,47 @@ export default function FieldManagementPage() {
           </div>
         )}
       </div>
+
+      {/* Preview Modal */}
+      {showPreviewModal && previewImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-800">Preview Gambar</h3>
+              <button 
+                onClick={cancelFileSelection}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-6 bg-gray-50 flex-grow overflow-auto flex items-center justify-center">
+               <img 
+                 src={previewImage} 
+                 alt="Preview" 
+                 className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-md"
+               />
+            </div>
+            
+            <div className="p-6 border-t border-gray-100 bg-white flex justify-end space-x-3">
+               <button
+                 onClick={cancelFileSelection}
+                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+               >
+                 Batal
+               </button>
+               <button
+                 onClick={confirmFileSelection}
+                 className="px-6 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center"
+               >
+                 <CheckCircle className="h-4 w-4 mr-2" />
+                 Pilih Gambar
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
