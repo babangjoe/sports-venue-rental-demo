@@ -387,16 +387,16 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-400 via-blue-500 to-purple-600 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        {/* <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2 text-white/90 hover:text-white transition-colors">
               <ArrowLeft className="h-5 w-5" />
               <span className="font-medium">Kembali ke Home</span>
             </Link>
           </div>
-        </div>
+        </div> */}
         <div className="mb-6">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
+          <h1 className="text-4xl md:text-4xl font-bold text-white mb-2">
             Dashboard <span className="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">Transaksi</span>
           </h1>
           <p className="text-white/90 text-lg">Monitor transaksi lapangan olahraga Anda</p>

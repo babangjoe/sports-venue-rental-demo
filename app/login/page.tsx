@@ -68,7 +68,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#333333] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-[calc(100vh-4rem)] bg-[#333333] flex items-center justify-center p-4 relative overflow-hidden">
       
       {/* Background Pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -81,13 +81,7 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md max-h-[95vh] overflow-y-auto p-4 bg-[#404040] backdrop-blur-sm rounded-3xl shadow-2xl border border-white/10">
         
         {/* Back to Home */}
-        <Link
-          href="/"
-          className="inline-flex items-center text-gray-400 hover:text-white mb-4 transition-colors group"
-        >
-          <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-          Kembali ke Beranda
-        </Link>
+        {/* Removed Back to Home link as Navbar is now present */}
   
         {/* Header */}
         <div className="text-center mb-6">

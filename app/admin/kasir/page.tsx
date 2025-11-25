@@ -250,12 +250,12 @@ export default function CashierPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
+          {/* <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2 text-white/90 hover:text-white transition-colors">
               <ArrowLeft className="h-5 w-5" />
               <span className="font-medium">Kembali ke Home</span>
             </Link>
-          </div>
+          </div> */}
           <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
             <CreditCard className="h-5 w-5 text-emerald-300" />
             <span className="text-white font-bold">Cashier System</span>

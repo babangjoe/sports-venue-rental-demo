@@ -60,6 +60,18 @@ export default function SportsManagementPage() {
     loadSports();
   }, []);
 
+  // Toggle body scroll when modal is open
+  useEffect(() => {
+    if (showAddForm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [showAddForm]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
@@ -183,10 +195,10 @@ export default function SportsManagementPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition-colors">
+              {/* <Link href="/" className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition-colors">
                 <ArrowLeft className="h-5 w-5" />
                 <span className="font-medium">Kembali ke Home</span>
-              </Link>
+              </Link> */}
               <div className="flex items-center space-x-2">
                 <div className="bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl p-2">
                   <Activity className="h-6 w-6 text-white" />
@@ -231,108 +243,126 @@ export default function SportsManagementPage() {
           </div>
         )}
 
-        {/* Add/Edit Form */}
+        {/* Add/Edit Form Modal */}
         {showAddForm && (
-          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {editingSport ? 'Edit Cabang Olahraga' : 'Tambah Cabang Olahraga Baru'}
-            </h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Sport Name */}
-                <div>
-                  <label htmlFor="sport_name" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                    <Activity className="h-5 w-5 text-emerald-600" />
-                    <span>Nama Cabang Olahraga</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="sport_name"
-                    name="sport_name"
-                    value={formData.sport_name}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="Contoh: Futsal, Basket, Badminton"
-                  />
-                </div>
-
-                {/* Sport Type */}
-                <div>
-                  <label htmlFor="sport_type" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                    <Target className="h-5 w-5 text-blue-600" />
-                    <span>Kode Cabang Olahraga</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="sport_type"
-                    name="sport_type"
-                    value={formData.sport_type}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="Contoh: futsal, basketball, badminton"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Gunakan huruf kecil dan pisahkan dengan tanda hubung (-)
-                  </p>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label htmlFor="description" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                  <span>Deskripsi (Opsional)</span>
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                  placeholder="Deskripsi cabang olahraga, aturan main, dll."
-                />
-              </div>
-
-              {/* Available Status */}
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="is_available"
-                  name="is_available"
-                  checked={formData.is_available}
-                  onChange={handleInputChange}
-                  className="h-5 w-5 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-                />
-                <label htmlFor="is_available" className="text-gray-700 font-medium">
-                  Cabang olahraga tersedia untuk booking
-                </label>
-              </div>
-
-              {/* Form Actions */}
-              <div className="flex space-x-4 pt-6">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className={`px-8 py-3 rounded-2xl font-semibold transition-all shadow-lg ${
-                    submitting
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:scale-105'
-                  }`}
-                >
-                  {submitting ? 'Menyimpan...' : (editingSport ? 'Perbarui' : 'Tambah')}
-                </button>
-                <button
-                  type="button"
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-hidden">
+            <div 
+                className="absolute inset-0" 
+                onClick={resetForm}
+            ></div>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl relative flex flex-col max-h-[90vh] z-10">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {editingSport ? 'Edit Cabang Olahraga' : 'Tambah Cabang Olahraga Baru'}
+                </h2>
+                <button 
                   onClick={resetForm}
-                  className="px-8 py-3 border border-gray-300 text-gray-700 rounded-2xl font-semibold hover:bg-gray-50 transition-all"
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  Batal
+                  <XCircle className="h-6 w-6" />
                 </button>
               </div>
-            </form>
+              
+              {/* Modal Body - Scrollable */}
+              <div className="p-8 overflow-y-auto">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Sport Name */}
+                    <div>
+                      <label htmlFor="sport_name" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
+                        <Activity className="h-5 w-5 text-emerald-600" />
+                        <span>Nama Cabang Olahraga</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="sport_name"
+                        name="sport_name"
+                        value={formData.sport_name}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                        placeholder="Contoh: Futsal, Basket, Badminton"
+                      />
+                    </div>
+
+                    {/* Sport Type */}
+                    <div>
+                      <label htmlFor="sport_type" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
+                        <Target className="h-5 w-5 text-blue-600" />
+                        <span>Kode Cabang Olahraga</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="sport_type"
+                        name="sport_type"
+                        value={formData.sport_type}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="Contoh: futsal, basketball, badminton"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        Gunakan huruf kecil dan pisahkan dengan tanda hubung (-)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label htmlFor="description" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
+                      <span>Deskripsi (Opsional)</span>
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                      placeholder="Deskripsi cabang olahraga, aturan main, dll."
+                    />
+                  </div>
+
+                  {/* Available Status */}
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="is_available"
+                      name="is_available"
+                      checked={formData.is_available}
+                      onChange={handleInputChange}
+                      className="h-5 w-5 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="is_available" className="text-gray-700 font-medium">
+                      Cabang olahraga tersedia untuk booking
+                    </label>
+                  </div>
+
+                  {/* Form Actions */}
+                  <div className="flex space-x-4 pt-2">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className={`flex-1 py-3 rounded-2xl font-semibold transition-all shadow-lg ${
+                        submitting
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:scale-105'
+                      }`}
+                    >
+                      {submitting ? 'Menyimpan...' : (editingSport ? 'Perbarui' : 'Tambah')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-2xl font-semibold hover:bg-gray-50 transition-all"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         )}
 

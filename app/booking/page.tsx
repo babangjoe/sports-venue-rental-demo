@@ -344,7 +344,7 @@ export default function BookingPage() {
   return (
     <div className="min-h-screen bg-[#333333]">
       {/* Header */}
-      <div className="bg-[#404040] shadow-sm border-b border-white/10">
+      {/* <div className="bg-[#404040] shadow-sm border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 transition-colors">
@@ -361,7 +361,7 @@ export default function BookingPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

@@ -370,10 +370,10 @@ export default function FieldManagementPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition-colors">
+              {/* <Link href="/" className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition-colors">
                 <ArrowLeft className="h-5 w-5" />
                 <span className="font-medium">Kembali ke Home</span>
-              </Link>
+              </Link> */}
               <div className="flex items-center space-x-2">
                 <div className="bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl p-2">
                   <Target className="h-6 w-6 text-white" />

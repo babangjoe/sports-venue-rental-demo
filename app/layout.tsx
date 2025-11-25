@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/contexts/AuthContext';
+import Navbar from '@/components/Navbar';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="id" className={inter.variable}>
       <body className={`${inter.className} antialiased`}>
         <AuthProvider>
+          <Navbar />
           {children}
         </AuthProvider>
       </body>
