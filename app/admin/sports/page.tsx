@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Target, Edit, Trash2, CheckCircle, XCircle, AlertCircle, Activity, Users, Zap, Dribbble, ShuffleIcon as Shuttlecock } from 'lucide-react';
+import { ArrowLeft, Plus, Target, Edit, Trash2, CheckCircle, XCircle, AlertCircle, Activity, Users, Zap, Dribbble, ShuffleIcon as Shuttlecock, Search, Filter } from 'lucide-react';
 import Link from 'next/link';
 
 // Data struktur untuk ikon olahraga
@@ -179,100 +179,95 @@ export default function SportsManagementPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#111827] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat data cabang olahraga...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF6C37] mx-auto mb-4"></div>
+          <p className="text-gray-400 text-sm">Memuat data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50">
+    <div className="min-h-screen bg-[#111827] text-[#FF6C37] font-sans selection:bg-[#FF6C37]/20">
       {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="border-b border-[#1F2937] bg-[#111827]/95 backdrop-blur-md sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              {/* <Link href="/" className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition-colors">
-                <ArrowLeft className="h-5 w-5" />
-                <span className="font-medium">Kembali ke Home</span>
-              </Link> */}
-              <div className="flex items-center space-x-2">
-                <div className="bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl p-2">
-                  <Activity className="h-6 w-6 text-white" />
+              <div className="flex items-center space-x-3">
+                <div className="bg-[#FF6C37]/10 p-2 rounded-lg border border-[#FF6C37]/20">
+                  <Activity className="h-5 w-5 text-[#FF6C37]" />
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                <h1 className="text-lg font-semibold text-white tracking-tight">
                   Manajemen Cabang Olahraga
-                </span>
+                </h1>
               </div>
             </div>
             <button
               onClick={() => setShowAddForm(true)}
-              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-6 py-3 rounded-2xl font-semibold hover:scale-105 transition-transform shadow-lg flex items-center space-x-2"
+              className="bg-[#FF6C37] hover:bg-[#FF5722] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-[0_4px_12px_rgba(255,108,55,0.3)] hover:shadow-[0_6px_20px_rgba(255,108,55,0.4)] flex items-center space-x-2 border-0"
             >
-              <Plus className="h-5 w-5" />
-              <span>Tambah Cabang Olahraga</span>
+              <Plus className="h-4 w-4" />
+              <span>Tambah Olahraga</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Message */}
         {message && (
-          <div className={`mb-6 p-4 rounded-2xl flex items-center space-x-2 ${
+          <div className={`mb-6 p-4 rounded-lg border text-sm flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 ${
             message.type === 'success' 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
-              : 'bg-red-100 text-red-800 border border-red-200'
+              ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]' 
+              : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
           }`}>
             {message.type === 'success' ? (
-              <CheckCircle className="h-5 w-5" />
+              <CheckCircle className="h-4 w-4" />
             ) : (
-              <AlertCircle className="h-5 w-5" />
+              <AlertCircle className="h-4 w-4" />
             )}
-            <span>{message.text}</span>
+            <span className="text-white">{message.text}</span>
             <button
               onClick={() => setMessage(null)}
-              className="ml-auto text-gray-500 hover:text-gray-700"
+              className="ml-auto text-gray-400 hover:text-white transition-colors"
             >
-              <XCircle className="h-5 w-5" />
+              <XCircle className="h-4 w-4" />
             </button>
           </div>
         )}
 
         {/* Add/Edit Form Modal */}
         {showAddForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-hidden">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div 
                 className="absolute inset-0" 
                 onClick={resetForm}
             ></div>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl relative flex flex-col max-h-[90vh] z-10">
+            <div className="bg-[#1F2937] border border-[#374151] rounded-xl shadow-2xl w-full max-w-2xl relative flex flex-col max-h-[90vh] z-10 animate-in zoom-in-95 duration-200">
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {editingSport ? 'Edit Cabang Olahraga' : 'Tambah Cabang Olahraga Baru'}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-[#374151] bg-[#1F2937] rounded-t-xl">
+                <h2 className="text-lg font-semibold text-white">
+                  {editingSport ? 'Edit Cabang Olahraga' : 'Tambah Cabang Olahraga'}
                 </h2>
                 <button 
                   onClick={resetForm}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 hover:text-white transition-colors"
                 >
-                  <XCircle className="h-6 w-6" />
+                  <XCircle className="h-5 w-5" />
                 </button>
               </div>
               
-              {/* Modal Body - Scrollable */}
-              <div className="p-8 overflow-y-auto">
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Sport Name */}
-                    <div>
-                      <label htmlFor="sport_name" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                        <Activity className="h-5 w-5 text-emerald-600" />
-                        <span>Nama Cabang Olahraga</span>
+                    <div className="space-y-2">
+                      <label htmlFor="sport_name" className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                        Nama Olahraga
                       </label>
                       <input
                         type="text"
@@ -281,16 +276,15 @@ export default function SportsManagementPage() {
                         value={formData.sport_name}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                        placeholder="Contoh: Futsal, Basket, Badminton"
+                        className="w-full px-3 py-2.5 bg-[#111827] border border-[#374151] rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF6C37] focus:border-[#FF6C37] outline-none transition-all text-sm"
+                        placeholder="e.g. Futsal"
                       />
                     </div>
 
                     {/* Sport Type */}
-                    <div>
-                      <label htmlFor="sport_type" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                        <Target className="h-5 w-5 text-blue-600" />
-                        <span>Kode Cabang Olahraga</span>
+                    <div className="space-y-2">
+                      <label htmlFor="sport_type" className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                        Kode (Slug)
                       </label>
                       <input
                         type="text"
@@ -299,19 +293,19 @@ export default function SportsManagementPage() {
                         value={formData.sport_type}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        placeholder="Contoh: futsal, basketball, badminton"
+                        className="w-full px-3 py-2.5 bg-[#111827] border border-[#374151] rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF6C37] focus:border-[#FF6C37] outline-none transition-all text-sm"
+                        placeholder="e.g. futsal"
                       />
-                      <p className="text-sm text-gray-500 mt-1">
-                        Gunakan huruf kecil dan pisahkan dengan tanda hubung (-)
+                      <p className="text-xs text-gray-400">
+                        Huruf kecil, pisahkan spasi dengan (-)
                       </p>
                     </div>
                   </div>
 
                   {/* Description */}
-                  <div>
-                    <label htmlFor="description" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                      <span>Deskripsi (Opsional)</span>
+                  <div className="space-y-2">
+                    <label htmlFor="description" className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                      Deskripsi
                     </label>
                     <textarea
                       id="description"
@@ -319,45 +313,45 @@ export default function SportsManagementPage() {
                       value={formData.description}
                       onChange={handleInputChange}
                       rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                      placeholder="Deskripsi cabang olahraga, aturan main, dll."
+                      className="w-full px-3 py-2.5 bg-[#111827] border border-[#374151] rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF6C37] focus:border-[#FF6C37] outline-none transition-all text-sm resize-none"
+                      placeholder="Deskripsi singkat..."
                     />
                   </div>
 
                   {/* Available Status */}
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 bg-[#111827] p-3 rounded-lg border border-[#374151]">
                     <input
                       type="checkbox"
                       id="is_available"
                       name="is_available"
                       checked={formData.is_available}
                       onChange={handleInputChange}
-                      className="h-5 w-5 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-[#FF6C37] bg-[#111827] border-[#374151] rounded focus:ring-2 focus:ring-[#FF6C37] focus:ring-offset-[#1F2937]"
                     />
-                    <label htmlFor="is_available" className="text-gray-700 font-medium">
-                      Cabang olahraga tersedia untuk booking
+                    <label htmlFor="is_available" className="text-sm text-white select-none cursor-pointer">
+                      Tersedia untuk booking
                     </label>
                   </div>
 
                   {/* Form Actions */}
-                  <div className="flex space-x-4 pt-2">
+                  <div className="flex space-x-3 pt-4 border-t border-[#374151]">
+                     <button
+                      type="button"
+                      onClick={resetForm}
+                      className="px-4 py-2 border border-[#374151] text-gray-300 rounded-lg text-sm font-medium hover:bg-[#374151] hover:text-white transition-colors"
+                    >
+                      Batal
+                    </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className={`flex-1 py-3 rounded-2xl font-semibold transition-all shadow-lg ${
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all shadow-lg ${
                         submitting
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:scale-105'
+                          ? 'bg-[#374151] text-gray-400 cursor-not-allowed'
+                          : 'bg-[#FF6C37] text-white hover:bg-[#FF5722] shadow-lg hover:shadow-xl'
                       }`}
                     >
-                      {submitting ? 'Menyimpan...' : (editingSport ? 'Perbarui' : 'Tambah')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-2xl font-semibold hover:bg-gray-50 transition-all"
-                    >
-                      Batal
+                      {submitting ? 'Menyimpan...' : (editingSport ? 'Simpan Perubahan' : 'Buat Olahraga')}
                     </button>
                   </div>
                 </form>
@@ -374,44 +368,46 @@ export default function SportsManagementPage() {
                 const SportIcon = getSportIcon(sport.sport_type);
                 
                 return (
-                  <div key={sport.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden">
-                    <div className="bg-gradient-to-r from-emerald-500 to-blue-500 p-6">
-                      <div className="flex items-center justify-between">
+                  <div key={sport.id} className="group bg-[#1F2937] border border-[#374151] rounded-xl hover:border-[#FF6C37]/30 hover:shadow-[0_8px_32px_rgba(255,108,55,0.15)] transition-all duration-300 overflow-hidden">
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-3">
-                          <SportIcon className="h-8 w-8 text-white" />
+                          <div className="bg-[#111827] p-3 rounded-lg group-hover:bg-[#FF6C37]/10 transition-colors border border-[#374151] group-hover:border-[#FF6C37]/20">
+                            <SportIcon className="h-6 w-6 text-gray-400 group-hover:text-[#FF6C37] transition-colors" />
+                          </div>
                           <div>
-                            <h3 className="text-xl font-bold text-white">{sport.sport_name}</h3>
-                            <p className="text-emerald-100 text-sm">Kode: {sport.sport_type}</p>
+                            <h3 className="text-base font-semibold text-white group-hover:text-[#FF6C37] transition-colors">{sport.sport_name}</h3>
+                            <p className="text-gray-400 text-xs font-mono mt-0.5">{sport.sport_type}</p>
                           </div>
                         </div>
-                        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        <div className={`px-2 py-1 rounded-lg text-xs uppercase tracking-wide font-semibold border ${
                           sport.is_available 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
+                            ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]' 
+                            : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
                         }`}>
                           {sport.is_available ? 'Aktif' : 'Nonaktif'}
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="p-6">
+                      
                       {sport.description && (
-                        <p className="text-gray-600 mb-4">{sport.description}</p>
+                        <p className="text-gray-400 text-sm mb-5 line-clamp-2 h-10">
+                          {sport.description}
+                        </p>
                       )}
                       
-                      <div className="flex space-x-2">
+                      <div className="flex items-center justify-end space-x-3 pt-4 border-t border-[#374151]">
                         <button
                           onClick={() => handleEdit(sport)}
-                          className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center space-x-2"
+                          className="px-3 py-2 text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#374151] rounded-lg transition-all duration-200 flex items-center space-x-1.5 border border-transparent hover:border-[#374151]"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-3.5 w-3.5" />
                           <span>Edit</span>
                         </button>
                         <button
                           onClick={() => handleDelete(sport.id)}
-                          className="flex-1 bg-red-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-red-600 transition-colors flex items-center justify-center space-x-2"
+                          className="px-3 py-2 text-xs font-semibold text-gray-400 hover:text-white hover:bg-red-500/20 hover:border-red-500/40 rounded-lg transition-all duration-200 flex items-center space-x-1.5 border border-transparent"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                           <span>Hapus</span>
                         </button>
                       </div>
@@ -421,16 +417,17 @@ export default function SportsManagementPage() {
               })}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <Activity className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Belum ada cabang olahraga</h3>
-              <p className="text-gray-600 mb-6">Mulai dengan menambahkan cabang olahraga pertama Anda</p>
+            <div className="text-center py-16 bg-[#1F2937] border border-[#374151] rounded-xl border-dashed">
+              <div className="bg-[#111827] p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center border border-[#374151]">
+                <Activity className="h-8 w-8 text-gray-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-1">Belum ada olahraga</h3>
+              <p className="text-gray-400 mb-6 text-sm">Tambahkan cabang olahraga pertama anda untuk memulai.</p>
               <button
                 onClick={() => setShowAddForm(true)}
-                className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-8 py-3 rounded-2xl font-semibold hover:scale-105 transition-transform shadow-lg flex items-center space-x-2 mx-auto"
+                className="bg-[#FF6C37] hover:bg-[#FF5722] text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all shadow-lg hover:shadow-xl"
               >
-                <Plus className="h-5 w-5" />
-                <span>Tambah Cabang Olahraga Pertama</span>
+                Tambah Olahraga
               </button>
             </div>
           )}
@@ -438,35 +435,34 @@ export default function SportsManagementPage() {
 
         {/* Statistics */}
         {sports.length > 0 && (
-          <div className="mt-12 bg-white rounded-2xl shadow-lg p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Statistik Cabang Olahraga</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl p-4 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                  <Activity className="h-8 w-8 text-white" />
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+             <div className="bg-[#1F2937] border border-[#374151] p-5 rounded-xl flex items-center justify-between hover:border-[#FF6C37]/30 transition-all duration-300">
+                <div>
+                  <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Total Olahraga</p>
+                  <p className="text-3xl font-bold text-white">{sports.length}</p>
                 </div>
-                <div className="text-2xl font-bold text-gray-900">{sports.length}</div>
-                <div className="text-gray-600">Total Cabang Olahraga</div>
-              </div>
-              <div className="text-center">
-                <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl p-4 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                  <CheckCircle className="h-8 w-8 text-white" />
+                <div className="bg-[#111827] p-3 rounded-lg border border-[#374151]">
+                  <Activity className="h-8 w-8 text-[#FF6C37]" />
                 </div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {sports.filter(sport => sport.is_available).length}
+             </div>
+             <div className="bg-[#1F2937] border border-[#374151] p-5 rounded-xl flex items-center justify-between hover:border-[#34D399]/30 transition-all duration-300">
+                <div>
+                  <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Aktif</p>
+                  <p className="text-3xl font-bold text-white">{sports.filter(sport => sport.is_available).length}</p>
                 </div>
-                <div className="text-gray-600">Aktif</div>
-              </div>
-              <div className="text-center">
-                <div className="bg-gradient-to-r from-red-500 to-pink-500 rounded-2xl p-4 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                  <XCircle className="h-8 w-8 text-white" />
+                <div className="bg-[#111827] p-3 rounded-lg border border-[#374151]">
+                  <CheckCircle className="h-8 w-8 text-[#34D399]" />
                 </div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {sports.filter(sport => !sport.is_available).length}
+             </div>
+             <div className="bg-[#1F2937] border border-[#374151] p-5 rounded-xl flex items-center justify-between hover:border-[#F87171]/30 transition-all duration-300">
+                <div>
+                  <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Nonaktif</p>
+                  <p className="text-3xl font-bold text-white">{sports.filter(sport => !sport.is_available).length}</p>
                 </div>
-                <div className="text-gray-600">Nonaktif</div>
-              </div>
-            </div>
+                <div className="bg-[#111827] p-3 rounded-lg border border-[#374151]">
+                  <XCircle className="h-8 w-8 text-[#F87171]" />
+                </div>
+             </div>
           </div>
         )}
       </div>

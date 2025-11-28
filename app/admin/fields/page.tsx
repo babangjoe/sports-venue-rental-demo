@@ -354,40 +354,36 @@ export default function FieldManagementPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#111827] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat data...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF6C37] mx-auto mb-4"></div>
+          <p className="text-gray-400 text-sm">Memuat data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50">
+    <div className="min-h-screen bg-[#111827] text-[#FF6C37] font-sans selection:bg-[#FF6C37]/20">
       {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="border-b border-[#1F2937] bg-[#111827]/95 backdrop-blur-md sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              {/* <Link href="/" className="flex items-center space-x-2 text-emerald-600 hover:text-emerald-700 transition-colors">
-                <ArrowLeft className="h-5 w-5" />
-                <span className="font-medium">Kembali ke Home</span>
-              </Link> */}
-              <div className="flex items-center space-x-2">
-                <div className="bg-gradient-to-r from-emerald-500 to-blue-500 rounded-2xl p-2">
-                  <Target className="h-6 w-6 text-white" />
+              <div className="flex items-center space-x-3">
+                <div className="bg-[#FF6C37]/10 p-2 rounded-lg border border-[#FF6C37]/20">
+                  <Target className="h-5 w-5 text-[#FF6C37]" />
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
+                <h1 className="text-lg font-semibold text-white tracking-tight">
                   Manajemen Lapangan
-                </span>
+                </h1>
               </div>
             </div>
             <button
               onClick={() => setShowAddForm(true)}
-              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-6 py-3 rounded-2xl font-semibold hover:scale-105 transition-transform shadow-lg flex items-center space-x-2"
+              className="bg-[#FF6C37] hover:bg-[#FF5722] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-[0_4px_12px_rgba(255,108,55,0.3)] hover:shadow-[0_6px_20px_rgba(255,108,55,0.4)] flex items-center space-x-2 border-0"
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-4 w-4" />
               <span>Tambah Lapangan</span>
             </button>
           </div>
@@ -395,43 +391,48 @@ export default function FieldManagementPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Message */}
         {message && (
-          <div className={`mb-6 p-4 rounded-2xl flex items-center space-x-2 ${
+          <div className={`mb-6 p-4 rounded-lg border text-sm flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 ${
             message.type === 'success' 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
-              : 'bg-red-100 text-red-800 border border-red-200'
+              ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]' 
+              : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
           }`}>
             {message.type === 'success' ? (
-              <CheckCircle className="h-5 w-5" />
+              <CheckCircle className="h-4 w-4" />
             ) : (
-              <AlertCircle className="h-5 w-5" />
+              <AlertCircle className="h-4 w-4" />
             )}
-            <span>{message.text}</span>
+            <span className="text-white">{message.text}</span>
             <button
               onClick={() => setMessage(null)}
-              className="ml-auto text-gray-500 hover:text-gray-700"
+              className="ml-auto text-gray-400 hover:text-white transition-colors"
             >
-              <XCircle className="h-5 w-5" />
+              <XCircle className="h-4 w-4" />
             </button>
           </div>
         )}
 
         {/* Sport Filter */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <div className="bg-[#1F2937] border border-[#374151] rounded-xl shadow-xl p-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <h2 className="text-xl font-bold text-gray-900">Filter Lapangan</h2>
+              <div className="flex items-center space-x-2">
+                <div className="bg-[#FF6C37]/10 p-2 rounded-lg border border-[#FF6C37]/20">
+                  <Target className="h-4 w-4 text-[#FF6C37]" />
+                </div>
+                <h2 className="text-lg font-medium text-white">Filter Lapangan</h2>
+              </div>
               <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                 <div className="flex items-center space-x-2">
-                  <Target className="h-5 w-5 text-emerald-600" />
-                  <span className="text-gray-700 font-medium">Cabang Olahraga:</span>
+                  <Target className="h-4 w-4 text-gray-400" />
+                  <span className="text-gray-300 text-sm">Cabang Olahraga:</span>
                 </div>
                 <select
                   value={selectedSportFilter}
                   onChange={(e) => setSelectedSportFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all min-w-[200px]"
+                  className="px-3 py-2 bg-[#111827] border border-[#374151] rounded-lg focus:ring-2 focus:ring-[#FF6C37] focus:border-transparent transition-all min-w-[200px] text-white text-sm"
                 >
                   <option value="all">Semua Cabang Olahraga</option>
                   {sports.map((sport) => (
@@ -442,42 +443,41 @@ export default function FieldManagementPage() {
                 </select>
               </div>
             </div>
-            <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
-              Menampilkan <span className="font-semibold text-emerald-600">{filteredFields.length}</span> dari <span className="font-semibold">{fields.length}</span> lapangan
+            <div className="text-sm text-gray-400 bg-[#111827] px-3 py-2 rounded-lg border border-[#374151]">
+              Menampilkan <span className="font-semibold text-[#FF6C37]">{filteredFields.length}</span> dari <span className="font-semibold">{fields.length}</span> lapangan
             </div>
           </div>
         </div>
 
         {/* Add/Edit Form Modal */}
         {showAddForm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-hidden">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div 
                 className="absolute inset-0" 
                 onClick={resetForm} // Clicking outside modal closes it (optional, remove if not wanted)
             ></div>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl relative flex flex-col max-h-[90vh] z-10">
+            <div className="bg-[#1F2937] border border-[#374151] rounded-xl shadow-2xl w-full max-w-3xl relative flex flex-col max-h-[90vh] z-10 animate-in zoom-in-95 duration-200">
               {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-100">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {editingField ? 'Edit Lapangan' : 'Tambah Lapangan Baru'}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-[#374151] bg-[#1F2937] rounded-t-xl">
+                <h2 className="text-lg font-semibold text-white">
+                  {editingField ? 'Edit Lapangan' : 'Tambah Lapangan'}
                 </h2>
                 <button 
                   onClick={resetForm}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 hover:text-white transition-colors"
                 >
-                  <XCircle className="h-6 w-6" />
+                  <XCircle className="h-5 w-5" />
                 </button>
               </div>
               
               {/* Modal Body - Scrollable */}
-              <div className="p-8 overflow-y-auto">
+              <div className="p-6 overflow-y-auto">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Field Name */}
-                    <div>
-                      <label htmlFor="field_name" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                        <MapPin className="h-5 w-5 text-emerald-600" />
-                        <span>Nama Lapangan</span>
+                    <div className="space-y-2">
+                      <label htmlFor="field_name" className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                        Nama Lapangan
                       </label>
                       <input
                         type="text"
@@ -486,16 +486,15 @@ export default function FieldManagementPage() {
                         value={formData.field_name}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                        placeholder="Contoh: Lapangan Futsal A"
+                        className="w-full px-3 py-2.5 bg-[#111827] border border-[#374151] rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF6C37] focus:border-[#FF6C37] outline-none transition-all text-sm"
+                        placeholder="e.g. Lapangan Futsal A"
                       />
                     </div>
 
                     {/* Field Code */}
-                    <div>
-                      <label htmlFor="field_code" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                        <Target className="h-5 w-5 text-blue-600" />
-                        <span>Kode Lapangan</span>
+                    <div className="space-y-2">
+                      <label htmlFor="field_code" className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                        Kode Lapangan
                       </label>
                       <input
                         type="text"
@@ -504,16 +503,15 @@ export default function FieldManagementPage() {
                         value={formData.field_code}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        placeholder="Contoh: FUTSAL-A"
+                        className="w-full px-3 py-2.5 bg-[#111827] border border-[#374151] rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF6C37] focus:border-[#FF6C37] outline-none transition-all text-sm"
+                        placeholder="e.g. FUTSAL-A"
                       />
                     </div>
 
                     {/* Sport Selection */}
-                    <div>
-                      <label htmlFor="sport_id" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                        <Target className="h-5 w-5 text-purple-600" />
-                        <span>Cabang Olahraga</span>
+                    <div className="space-y-2">
+                      <label htmlFor="sport_id" className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                        Cabang Olahraga
                       </label>
                       <select
                         id="sport_id"
@@ -521,7 +519,7 @@ export default function FieldManagementPage() {
                         value={formData.sport_id}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        className="w-full px-3 py-2.5 bg-[#111827] border border-[#374151] rounded-lg text-white focus:ring-2 focus:ring-[#FF6C37] focus:border-[#FF6C37] outline-none transition-all text-sm"
                       >
                         <option value="">Pilih cabang olahraga</option>
                         {sports.map((sport) => (
@@ -533,10 +531,9 @@ export default function FieldManagementPage() {
                     </div>
 
                     {/* Price per Hour */}
-                    <div>
-                      <label htmlFor="price_per_hour" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                        <DollarSign className="h-5 w-5 text-green-600" />
-                        <span>Harga per Jam</span>
+                    <div className="space-y-2">
+                      <label htmlFor="price_per_hour" className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                        Harga per Jam
                       </label>
                       <input
                         type="text"
@@ -545,16 +542,20 @@ export default function FieldManagementPage() {
                         value={formData.price_per_hour}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                        placeholder="Contoh: 150.000"
+                        className="w-full px-3 py-2.5 bg-[#111827] border border-[#374151] rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF6C37] focus:border-[#FF6C37] outline-none transition-all text-sm"
+                        placeholder="e.g. 150.000"
                       />
                     </div>
                   </div>
 
                   {/* Image Upload */}
                   <div>
-                    <div className="flex items-center justify-between mb-4">
-                        {existingImages.length + newImages.length < 3 ? (
+                    <label htmlFor="description" className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-3 block">
+                      Gambar Lapangan ({existingImages.length + newImages.length}/3)
+                    </label>
+                    
+                    <div className="space-y-3">
+                        {existingImages.length + newImages.length < 3 && (
                           <>
                             <input
                                 type="file"
@@ -565,26 +566,23 @@ export default function FieldManagementPage() {
                             />
                             <label 
                               htmlFor="file_upload"
-                              className="cursor-pointer inline-flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors text-sm font-semibold border border-blue-200"
+                              className="cursor-pointer inline-flex items-center px-4 py-2 bg-[#FF6C37]/10 text-[#FF6C37] rounded-lg hover:bg-[#FF6C37]/20 transition-colors text-sm font-semibold border border-[#FF6C37]/20"
                             >
                                <Plus className="h-4 w-4 mr-2" />
                                Tambah Gambar
                             </label>
                           </>
-                        ) : (
-                           <div className="text-sm text-gray-500 italic">Maksimal 3 gambar tercapai</div>
                         )}
 
-                        <label className="flex items-center space-x-2 text-gray-700 font-medium">
-                          <ImageIcon className="h-5 w-5 text-blue-600" />
-                          <span>Gambar Lapangan ({existingImages.length + newImages.length}/3)</span>
-                        </label>
+                        {!existingImages.length && !newImages.length && (
+                            <div className="text-xs text-gray-400 italic">Format: .jpg, .png, .tif (Max 2MB)</div>
+                        )}
                     </div>
                     
                     <div className="grid grid-cols-3 gap-4">
                         {/* Existing Images List */}
                         {existingImages.map((url, idx) => (
-                          <div key={`exist-${idx}`} className="relative group aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                          <div key={`exist-${idx}`} className="relative group aspect-video bg-[#111827] rounded-lg overflow-hidden border border-[#374151]">
                             <img src={url} alt={`Field ${idx}`} className="w-full h-full object-cover" />
                             <button
                               type="button"
@@ -593,7 +591,7 @@ export default function FieldManagementPage() {
                             >
                               <XCircle className="h-4 w-4" />
                             </button>
-                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 text-center truncate">
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-gray-300 text-xs p-1 text-center truncate">
                               Existing
                             </div>
                           </div>
@@ -601,8 +599,8 @@ export default function FieldManagementPage() {
 
                         {/* New Images List */}
                         {newImages.map((file, idx) => (
-                          <div key={`new-${idx}`} className="relative group aspect-video bg-blue-50 rounded-lg overflow-hidden border border-blue-200">
-                            <div className="w-full h-full flex items-center justify-center text-blue-500 font-bold text-xs truncate px-2">
+                          <div key={`new-${idx}`} className="relative group aspect-video bg-[#FF6C37]/10 rounded-lg overflow-hidden border border-[#FF6C37]/20">
+                            <div className="w-full h-full flex items-center justify-center text-[#FF6C37] font-bold text-xs truncate px-2">
                                 {file.name}
                             </div>
                             <button
@@ -612,7 +610,7 @@ export default function FieldManagementPage() {
                             >
                               <XCircle className="h-4 w-4" />
                             </button>
-                            <div className="absolute bottom-0 left-0 right-0 bg-blue-600 text-white text-xs p-1 text-center">
+                            <div className="absolute bottom-0 left-0 right-0 bg-[#FF6C37]/80 text-white text-xs p-1 text-center">
                               New
                             </div>
                           </div>
@@ -621,18 +619,17 @@ export default function FieldManagementPage() {
 
                     {/* Empty State */}
                     {(existingImages.length === 0 && newImages.length === 0) && (
-                        <div className="flex flex-col items-center justify-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 mt-4">
-                            <ImageIcon className="h-8 w-8 mb-2 opacity-50" />
+                        <div className="flex flex-col items-center justify-center py-8 bg-[#111827] rounded-lg border-2 border-dashed border-[#374151] text-gray-500 mt-4">
+                            <ImageIcon className="h-8 w-8 mb-2" />
                             <span className="text-sm">Belum ada gambar</span>
-                            <span className="text-xs mt-1">Format: .jpg, .png (Max 2MB)</span>
                         </div>
                     )}
                   </div>
 
                   {/* Description */}
-                  <div>
-                    <label htmlFor="description" className="flex items-center space-x-2 text-gray-700 font-medium mb-3">
-                      <span>Deskripsi (Opsional)</span>
+                  <div className="space-y-2">
+                    <label htmlFor="description" className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                      Deskripsi
                     </label>
                     <textarea
                       id="description"
@@ -640,45 +637,45 @@ export default function FieldManagementPage() {
                       value={formData.description}
                       onChange={handleInputChange}
                       rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                      placeholder="Deskripsi lapangan, fasilitas, dll."
+                      className="w-full px-3 py-2.5 bg-[#111827] border border-[#374151] rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-[#FF6C37] focus:border-[#FF6C37] outline-none transition-all text-sm resize-none"
+                      placeholder="Deskripsi singkat..."
                     />
                   </div>
 
                   {/* Available Status */}
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 bg-[#111827] p-3 rounded-lg border border-[#374151]">
                     <input
                       type="checkbox"
                       id="is_available"
                       name="is_available"
                       checked={formData.is_available}
                       onChange={handleInputChange}
-                      className="h-5 w-5 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-[#FF6C37] bg-[#111827] border-[#374151] rounded focus:ring-2 focus:ring-[#FF6C37] focus:ring-offset-[#1F2937]"
                     />
-                    <label htmlFor="is_available" className="text-gray-700 font-medium">
-                      Lapangan tersedia untuk booking
+                    <label htmlFor="is_available" className="text-sm text-white select-none cursor-pointer">
+                      Tersedia untuk booking
                     </label>
                   </div>
 
                   {/* Form Actions */}
-                  <div className="flex space-x-4 pt-2">
+                  <div className="flex space-x-3 pt-4 border-t border-[#374151]">
+                     <button
+                      type="button"
+                      onClick={resetForm}
+                      className="px-4 py-2 border border-[#374151] text-gray-300 rounded-lg text-sm font-medium hover:bg-[#374151] hover:text-white transition-colors"
+                    >
+                      Batal
+                    </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className={`flex-1 py-3 rounded-2xl font-semibold transition-all shadow-lg ${
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all shadow-lg ${
                         submitting
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:scale-105'
+                          ? 'bg-[#374151] text-gray-400 cursor-not-allowed'
+                          : 'bg-[#FF6C37] text-white hover:bg-[#FF5722] shadow-lg hover:shadow-xl'
                       }`}
                     >
-                      {submitting ? 'Menyimpan...' : (editingField ? 'Perbarui' : 'Tambah')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-2xl font-semibold hover:bg-gray-50 transition-all"
-                    >
-                      Batal
+                      {submitting ? 'Menyimpan...' : (editingField ? 'Simpan Perubahan' : 'Buat Lapangan')}
                     </button>
                   </div>
                 </form>
@@ -694,15 +691,17 @@ export default function FieldManagementPage() {
             const SportIcon = sportIcons[sportType as keyof typeof sportIcons] || Target;
             
             return (
-              <div key={sportType} className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                <div className="bg-gradient-to-r from-emerald-500 to-blue-500 p-6">
+              <div key={sportType} className="bg-[#1F2937] border border-[#374151] rounded-xl shadow-xl overflow-hidden">
+                <div className="bg-[#FF6C37] p-3">
                   <div className="flex items-center space-x-3">
-                    <SportIcon className="h-8 w-8 text-white" />
+                    <div className="bg-[#FF6C37]/20 p-2 rounded-lg">
+                      <SportIcon className="h-6 w-6 text-white" />
+                    </div>
                     <div>
-                      <h3 className="text-2xl font-bold text-white">
+                      <h3 className="text-xl font-bold text-white">
                         {sport?.sport_name || sportType}
                       </h3>
-                      <p className="text-emerald-100">
+                      <p className="text-orange-100">
                         {sportFields.length} lapangan tersedia
                       </p>
                     </div>
@@ -712,46 +711,50 @@ export default function FieldManagementPage() {
                 <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {sportFields.map((field) => (
-                      <div key={field.id} className="border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow">
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h4 className="text-xl font-bold text-gray-900">{field.field_name}</h4>
-                            <p className="text-gray-600 text-sm">Kode: {field.field_code}</p>
+                      <div key={field.id} className="group bg-[#1F2937] border border-[#374151] rounded-xl hover:border-[#FF6C37]/30 hover:shadow-[0_8px_32px_rgba(255,108,55,0.15)] transition-all duration-300 overflow-hidden">
+                        <div className="p-3">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h4 className="text-lg font-semibold text-white group-hover:text-[#FF6C37] transition-colors">{field.field_name}</h4>
+                              <p className="text-gray-400 text-sm font-mono mt-0.5">{field.field_code}</p>
+                            </div>
+                            <div className={`px-2 py-1 rounded-lg text-xs uppercase tracking-wide font-semibold border ${
+                              field.is_available 
+                                ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]' 
+                                : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
+                            }`}>
+                              {field.is_available ? 'Tersedia' : 'Tidak Tersedia'}
+                            </div>
                           </div>
-                          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            field.is_available 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {field.is_available ? 'Tersedia' : 'Tidak Tersedia'}
+                          
+                          <div className="space-y-2 mb-5">
+                            <div className="flex items-center space-x-2 text-gray-300">
+                              <DollarSign className="h-4 w-4" />
+                              <span className="font-medium">{formatPrice(field.price_per_hour)}/jam</span>
+                            </div>
+                            {field.description && (
+                              <p className="text-gray-400 text-sm line-clamp-2 h-10">
+                                {field.description}
+                              </p>
+                            )}
                           </div>
-                        </div>
-                        
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center space-x-2 text-gray-600">
-                            <DollarSign className="h-4 w-4" />
-                            <span className="font-semibold">{formatPrice(field.price_per_hour)}/jam</span>
+                          
+                          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-[#374151]">
+                            <button
+                              onClick={() => handleEdit(field)}
+                              className="px-3 py-2 text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#374151] rounded-lg transition-all duration-200 flex items-center space-x-1.5 border border-transparent hover:border-[#374151]"
+                            >
+                              <Edit className="h-3.5 w-3.5" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(field.id)}
+                              className="px-3 py-2 text-xs font-semibold text-gray-400 hover:text-white hover:bg-red-500/20 hover:border-red-500/40 rounded-lg transition-all duration-200 flex items-center space-x-1.5 border border-transparent"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              <span>Hapus</span>
+                            </button>
                           </div>
-                          {field.description && (
-                            <p className="text-gray-600 text-sm">{field.description}</p>
-                          )}
-                        </div>
-                        
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEdit(field)}
-                            className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center space-x-2"
-                          >
-                            <Edit className="h-4 w-4" />
-                            <span>Edit</span>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(field.id)}
-                            className="flex-1 bg-red-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-red-600 transition-colors flex items-center justify-center space-x-2"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span>Hapus</span>
-                          </button>
                         </div>
                       </div>
                     ))}
@@ -764,32 +767,34 @@ export default function FieldManagementPage() {
 
         {/* Empty State */}
         {filteredFields.length === 0 && fields.length > 0 && (
-          <div className="text-center py-12">
-            <Target className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Tidak ada lapangan untuk cabang olahraga ini</h3>
-            <p className="text-gray-600 mb-6">Coba pilih cabang olahraga lain atau tambahkan lapangan baru</p>
+          <div className="text-center py-16 bg-[#1F2937] border border-[#374151] rounded-xl border-dashed">
+            <div className="bg-[#111827] p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center border border-[#374151]">
+              <Target className="h-8 w-8 text-gray-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Tidak ada lapangan untuk cabang olahraga ini</h3>
+            <p className="text-gray-400 mb-6 text-sm">Coba pilih cabang olahraga lain atau tambahkan lapangan baru</p>
             <button
               onClick={() => setShowAddForm(true)}
-              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-8 py-3 rounded-2xl font-semibold hover:scale-105 transition-transform shadow-lg flex items-center space-x-2 mx-auto"
+              className="bg-[#FF6C37] hover:bg-[#FF5722] text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all shadow-lg hover:shadow-xl"
             >
-              <Plus className="h-5 w-5" />
-              <span>Tambah Lapangan Baru</span>
+              Tambah Lapangan Baru
             </button>
           </div>
         )}
 
         {/* No Fields at All */}
         {fields.length === 0 && (
-          <div className="text-center py-12">
-            <Target className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Belum ada lapangan</h3>
-            <p className="text-gray-600 mb-6">Mulai dengan menambahkan lapangan pertama Anda</p>
+          <div className="text-center py-16 bg-[#1F2937] border border-[#374151] rounded-xl border-dashed">
+            <div className="bg-[#111827] p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center border border-[#374151]">
+              <Target className="h-8 w-8 text-gray-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">Belum ada lapangan</h3>
+            <p className="text-gray-400 mb-6 text-sm">Mulai dengan menambahkan lapangan pertama anda</p>
             <button
               onClick={() => setShowAddForm(true)}
-              className="bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-8 py-3 rounded-2xl font-semibold hover:scale-105 transition-transform shadow-lg flex items-center space-x-2 mx-auto"
+              className="bg-[#FF6C37] hover:bg-[#FF5722] text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all shadow-lg hover:shadow-xl"
             >
-              <Plus className="h-5 w-5" />
-              <span>Tambah Lapangan Pertama</span>
+              Tambah Lapangan Pertama
             </button>
           </div>
         )}
@@ -798,18 +803,18 @@ export default function FieldManagementPage() {
       {/* Preview Modal */}
       {showPreviewModal && previewImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-800">Preview Gambar</h3>
+          <div className="bg-[#1F2937] border border-[#374151] rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-[#374151] flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-white">Preview Gambar</h3>
               <button 
                 onClick={cancelFileSelection}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-white transition-colors"
               >
-                <XCircle className="h-6 w-6" />
+                <XCircle className="h-5 w-5" />
               </button>
             </div>
             
-            <div className="p-6 bg-gray-50 flex-grow overflow-auto flex items-center justify-center">
+            <div className="p-6 bg-[#111827] flex-grow overflow-auto flex items-center justify-center">
                <img 
                  src={previewImage} 
                  alt="Preview" 
@@ -817,16 +822,16 @@ export default function FieldManagementPage() {
                />
             </div>
             
-            <div className="p-6 border-t border-gray-100 bg-white flex justify-end space-x-3">
+            <div className="p-6 border-t border-[#374151] bg-[#1F2937] flex justify-end space-x-3">
                <button
                  onClick={cancelFileSelection}
-                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+                 className="px-6 py-2 border border-[#374151] text-gray-300 rounded-lg font-semibold hover:bg-[#374151] transition-colors"
                >
                  Batal
                </button>
                <button
                  onClick={confirmFileSelection}
-                 className="px-6 py-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center"
+                 className="px-6 py-2 bg-[#FF6C37] text-white rounded-lg font-semibold hover:bg-[#FF5722] transition-colors flex items-center"
                >
                  <CheckCircle className="h-4 w-4 mr-2" />
                  Pilih Gambar
