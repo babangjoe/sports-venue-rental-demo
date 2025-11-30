@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, CreditCard, Receipt, User, Calendar, Clock, CheckCircle, RefreshCcw, XCircle, Utensils, Coffee, Trash2, Plus } from 'lucide-react';
+import { ArrowLeft, Search, CreditCard, Receipt, User, Calendar, Clock, CheckCircle, RefreshCcw, XCircle, Utensils, Coffee, Trash2, Plus, Pencil, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -53,6 +53,7 @@ export default function CashierPage() {
   
   // Cart State
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [editingItem, setEditingItem] = useState<{index: number, quantity: number} | null>(null);
   
   const [cashGiven, setCashGiven] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -165,6 +166,35 @@ export default function CashierPage() {
 
   const removeFromCart = (index: number) => {
     setCart(prev => prev.filter((_, i) => i !== index));
+    if (editingItem?.index === index) {
+      setEditingItem(null);
+    }
+  };
+
+  const startEditing = (index: number, quantity: number) => {
+    setEditingItem({ index, quantity });
+  };
+
+  const saveEditing = () => {
+    if (!editingItem) return;
+    
+    // If quantity is 0 or less, remove the item
+    if (editingItem.quantity <= 0) {
+      removeFromCart(editingItem.index);
+      setEditingItem(null);
+      return;
+    }
+    
+    const newQuantity = editingItem.quantity;
+    
+    setCart(prev => prev.map((item, i) => 
+      i === editingItem.index ? { ...item, quantity: newQuantity } : item
+    ));
+    setEditingItem(null);
+  };
+
+  const cancelEditing = () => {
+    setEditingItem(null);
   };
 
   const handleClear = () => {
@@ -172,6 +202,7 @@ export default function CashierPage() {
     setCashGiven('');
     setPaymentSuccess(null);
     setSearchTerm('');
+    setEditingItem(null);
   };
 
   const calculateTotal = () => {
@@ -241,35 +272,50 @@ export default function CashierPage() {
     }
   };
 
+  const formatNumber = (num: string) => {
+    // Remove non-digit characters
+    const cleanNum = num.replace(/\D/g, '');
+    if (!cleanNum) return '';
+    // Format with thousand separators
+    return new Intl.NumberFormat('id-ID').format(Number(cleanNum));
+  };
+
+  const handleCashChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    // Get raw number
+    const rawNum = val.replace(/\D/g, '');
+    setCashGiven(formatNumber(rawNum));
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-400 via-blue-500 to-purple-600 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-400 via-blue-500 to-purple-600 p-2 sm:p-4 md:p-6">
+      <div className="max-w-full lg:max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          {/* <div className="flex items-center space-x-4">
+        {/* <div className="flex items-center justify-between mb-4 sm:mb-8">
+          <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2 text-white/90 hover:text-white transition-colors">
               <ArrowLeft className="h-5 w-5" />
               <span className="font-medium">Kembali ke Home</span>
             </Link>
-          </div> */}
-          <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-            <CreditCard className="h-5 w-5 text-emerald-300" />
-            <span className="text-white font-bold">Cashier System</span>
           </div>
-        </div>
+          <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm px-3 py-1 sm:px-4 sm:py-2 rounded-full border border-white/20">
+            <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-300" />
+            <span className="text-white font-bold text-sm sm:text-base">Cashier System</span>
+          </div>
+        </div> */}
 
         {/* CONTAINER UTAMA (GRID) - Ditambahkan min-h- untuk menyelaraskan ketinggian */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative min-h-[calc(100vh-8rem)]"> 
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 relative min-h-[calc(100vh-6rem)]"> 
           {/* Right Column: Payment Detail (Left) */}
           <div className="lg:col-span-1">
             {/* KOLOM PEMBAYARAN - Dihapus 'sticky top-6' dan 'h-[...]', diganti dengan 'h-full' */}
-            <div className="bg-white rounded-2xl p-6 shadow-2xl flex flex-col relative sticky top-6 h-[calc(100vh-8rem)] overflow-hidden"> 
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center flex-shrink-0">
-                <Receipt className="h-6 w-6 mr-2 text-emerald-600" />
+            <div className="bg-white rounded-2xl p-4 shadow-2xl flex flex-col relative sticky top-4 h-[calc(100vh-6rem)] overflow-hidden">
+              <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center flex-shrink-0">
+                <Receipt className="h-5 w-5 mr-2 text-emerald-600" />
                 Pembayaran
               </h2>
 
@@ -342,24 +388,71 @@ export default function CashierPage() {
               ) : cart.length > 0 ? (
                 <div className="flex flex-col h-full">
                   {/* Cart Items List */}
-                  <div className="space-y-3 mb-4 flex-grow overflow-y-auto pr-1">
+                  <div className="space-y-3 mb-4 flex-grow overflow-y-auto pr-1 min-h-[16rem] sm:min-h-[12rem]">
                     {cart.map((item, index) => (
                       <div key={index} className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex justify-between items-center">
-                        <div className="flex-1 overflow-hidden">
-                          <p className="text-gray-800 font-medium truncate text-sm">{item.name}</p>
-                          <p className="text-gray-500 text-xs">
-                            {item.quantity} x {formatCurrency(item.price)}
-                          </p>
-                        </div>
-                        <div className="text-right pl-2">
-                          <p className="text-emerald-600 font-bold text-sm">{formatCurrency(item.price * item.quantity)}</p>
-                          <button 
-                            onClick={() => removeFromCart(index)}
-                            className="text-red-400 hover:text-red-600 text-xs mt-1"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
+                        {editingItem?.index === index ? (
+                          <div className="w-full">
+                            <div className="flex items-center space-x-2 mb-2">
+                                <div className="flex-1 overflow-hidden">
+                                    <p className="text-gray-800 font-medium truncate text-sm">{item.name}</p>
+                                    <p className="text-gray-500 text-xs">{formatCurrency(item.price)} / item</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-2 w-full">
+                                <Input 
+                                type="number" 
+                                min="0"
+                                value={editingItem.quantity === 0 ? '' : editingItem.quantity}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setEditingItem({...editingItem, quantity: val === '' ? 0 : parseInt(val)});
+                                }}
+                                placeholder="0"
+                                className="h-8 w-20 text-sm"
+                                />
+                                <div className="text-sm font-medium flex-1 text-right">
+                                {formatCurrency(item.price * editingItem.quantity)}
+                                </div>
+                                <div className="flex space-x-1">
+                                <button onClick={saveEditing} className="p-1 bg-green-100 text-green-600 rounded hover:bg-green-200">
+                                    <Check className="h-4 w-4" />
+                                </button>
+                                <button onClick={cancelEditing} className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200">
+                                    <X className="h-4 w-4" />
+                                </button>
+                                </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex-1 overflow-hidden">
+                              <p className="text-gray-800 font-medium truncate text-sm">{item.name}</p>
+                              <p className="text-gray-500 text-xs">
+                                {item.quantity} x {formatCurrency(item.price)}
+                              </p>
+                            </div>
+                            <div className="text-right pl-2">
+                              <p className="text-emerald-600 font-bold text-sm">{formatCurrency(item.price * item.quantity)}</p>
+                              <div className="flex justify-end space-x-2 mt-1">
+                                {item.type !== 'booking' && (
+                                  <button 
+                                    onClick={() => startEditing(index, item.quantity)}
+                                    className="text-blue-400 hover:text-blue-600 text-xs"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                )}
+                                <button 
+                                  onClick={() => removeFromCart(index)}
+                                  className="text-red-400 hover:text-red-600 text-xs"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -367,7 +460,7 @@ export default function CashierPage() {
                   <div className="space-y-4 mb-4 flex-shrink-0 pt-4 border-t border-gray-100">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Total Tagihan</label>
-                      <div className="text-3xl font-bold text-emerald-600">
+                      <div className="text-xl sm:text-2xl font-bold text-emerald-600">
                         {formatCurrency(calculateTotal())}
                       </div>
                     </div>
@@ -377,21 +470,18 @@ export default function CashierPage() {
                       <Input
                         type="text"
                         placeholder="0"
-                        className="text-xl h-14 font-bold"
+                        className="text-xl h-10 font-bold"
                         value={cashGiven}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          setCashGiven(val);
-                        }}
+                        onChange={handleCashChange}
                       />
                     </div>
 
-                    <div className={`p-4 rounded-xl transition-colors ${
+                    <div className={`h-10 px-3 rounded-xl transition-colors flex items-center ${
                       calculateChange() >= 0 ? 'bg-blue-50' : 'bg-red-50'
                     }`}>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center w-full">
                         <span className="text-sm font-medium text-gray-600">Kembali</span>
-                        <span className={`text-xl font-bold ${
+                        <span className={`text-lg sm:text-xl font-bold ${
                           calculateChange() >= 0 ? 'text-blue-600' : 'text-red-600'
                         }`}>
                           {formatCurrency(calculateChange())}
@@ -403,8 +493,8 @@ export default function CashierPage() {
                   <div className="mt-auto pb-1 flex-shrink-0">
                     <Button
                       onClick={handlePayment}
-                      disabled={processing || !cashGiven || Number(cashGiven) < calculateTotal()}
-                      className={`w-full h-14 text-lg font-bold rounded-xl shadow-lg transition-transform active:scale-95 ${
+                      disabled={processing || !cashGiven || Number(cashGiven.replace(/\D/g, '')) < calculateTotal()}
+                      className={`w-full h-10 text-base font-bold rounded-xl shadow-lg transition-transform active:scale-95 ${
                         processing 
                           ? 'bg-gray-400 cursor-not-allowed' 
                           : 'bg-gradient-to-r from-emerald-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white'
@@ -443,37 +533,37 @@ export default function CashierPage() {
             }} className="w-full flex flex-col flex-grow"> 
               
               {/* HEADER TABS & SEARCH (NON-SCROLLABLE) */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/10 sticky top-6 z-20 flex-shrink-0">
-                <div className="flex flex-col space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-white">Pilih Item</h2>
-                    <TabsList className="bg-white/20 border border-white/10">
-                      <TabsTrigger value="booking" className="data-[state=active]:bg-white data-[state=active]:text-emerald-600 text-white">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/10 sticky top-6 z-20 flex-shrink-0">
+                <div className="flex flex-col space-y-3">
+                  <div className="flex flex-col space-y-3">
+                    <h2 className="text-lg font-bold text-white">Pilih Item</h2>
+                    <TabsList className="bg-white/20 border border-white/10 w-full h-auto p-1 flex flex-wrap sm:flex-nowrap gap-1">
+                      <TabsTrigger value="booking" className="data-[state=active]:bg-white data-[state=active]:text-emerald-600 text-white w-full sm:w-auto sm:flex-1 text-xs sm:text-sm py-2">
                         Booking Pending
                       </TabsTrigger>
-                      <TabsTrigger value="makanan" className="data-[state=active]:bg-white data-[state=active]:text-orange-500 text-white">
-                        <Utensils className="h-4 w-4 mr-2" /> Makanan
+                      <TabsTrigger value="makanan" className="data-[state=active]:bg-white data-[state=active]:text-orange-500 text-white flex-1 text-xs sm:text-sm py-2">
+                        <Utensils className="h-3 w-3 mr-1" /> Makanan
                       </TabsTrigger>
-                      <TabsTrigger value="minuman" className="data-[state=active]:bg-white data-[state=active]:text-blue-500 text-white">
-                        <Coffee className="h-4 w-4 mr-2" /> Minuman
+                      <TabsTrigger value="minuman" className="data-[state=active]:bg-white data-[state=active]:text-blue-500 text-white flex-1 text-xs sm:text-sm py-2">
+                        <Coffee className="h-3 w-3 mr-1" /> Minuman
                       </TabsTrigger>
                     </TabsList>
                   </div>
                   
                   <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/60" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60" />
                     <Input
                       placeholder={activeTab === 'booking' ? "Cari nama customer, no. hp..." : "Cari menu..."}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-12 bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder:text-white/60 h-12 text-lg rounded-xl focus:bg-white/30 transition-all"
+                      className="pl-12 bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder:text-white/60 h-10 text-base rounded-xl focus:bg-white/30 transition-all"
                     />
                   </div>
                 </div>
               </div>
 
               {/* KONTEN TABS (SCROLLABLE AREA) - Dihapus 'min-h-[400px]', diganti dengan 'flex-grow overflow-y-auto' dan 'min-h-0' */}
-              <div className="mt-6 bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/10 sticky h-[calc(100vh-28rem)] flex-grow overflow-y-auto custom-scrollbar">
+              <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/10 sticky h-[calc(100vh-24rem)] flex-grow overflow-y-auto custom-scrollbar">
                 
                 <TabsContent value="booking" className="mt-0">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
@@ -482,9 +572,9 @@ export default function CashierPage() {
                   </h3>
                   
                   {loading ? (
-                    <div className="text-center py-12 text-white/60">Loading...</div>
+                    <div className="text-center py-8 text-white/60 text-sm">Loading...</div>
                   ) : bookings.length === 0 ? (
-                    <div className="text-center py-12 text-white/60 border-2 border-dashed border-white/20 rounded-xl">
+                    <div className="text-center py-8 text-white/60 border-2 border-dashed border-white/20 rounded-xl text-sm">
                       Tidak ada booking pending ditemukan
                     </div>
                   ) : (
@@ -531,7 +621,7 @@ export default function CashierPage() {
                   {loadingBarang ? (
                     <div className="text-center py-12 text-white/60">Loading...</div>
                   ) : barangList.length === 0 ? (
-                    <div className="text-center py-12 text-white/60 border-2 border-dashed border-white/20 rounded-xl">
+                    <div className="text-center py-8 text-white/60 border-2 border-dashed border-white/20 rounded-xl text-sm">
                       Tidak ada makanan ditemukan
                     </div>
                   ) : (
@@ -564,7 +654,7 @@ export default function CashierPage() {
                   {loadingBarang ? (
                     <div className="text-center py-12 text-white/60">Loading...</div>
                   ) : barangList.length === 0 ? (
-                    <div className="text-center py-12 text-white/60 border-2 border-dashed border-white/20 rounded-xl">
+                    <div className="text-center py-8 text-white/60 border-2 border-dashed border-white/20 rounded-xl text-sm">
                       Tidak ada minuman ditemukan
                     </div>
                   ) : (
@@ -1061,7 +1151,7 @@ export default function CashierPage() {
 //                   {loading ? (
 //                     <div className="text-center py-12 text-white/60">Loading...</div>
 //                   ) : bookings.length === 0 ? (
-//                     <div className="text-center py-12 text-white/60 border-2 border-dashed border-white/20 rounded-xl">
+//                     <div className="text-center py-8 text-white/60 border-2 border-dashed border-white/20 rounded-xl text-sm">
 //                       Tidak ada booking pending ditemukan
 //                     </div>
 //                   ) : (
@@ -1108,7 +1198,7 @@ export default function CashierPage() {
 //                   {loadingBarang ? (
 //                     <div className="text-center py-12 text-white/60">Loading...</div>
 //                   ) : barangList.length === 0 ? (
-//                     <div className="text-center py-12 text-white/60 border-2 border-dashed border-white/20 rounded-xl">
+//                     <div className="text-center py-8 text-white/60 border-2 border-dashed border-white/20 rounded-xl text-sm">
 //                       Tidak ada makanan ditemukan
 //                     </div>
 //                   ) : (
@@ -1141,7 +1231,7 @@ export default function CashierPage() {
 //                   {loadingBarang ? (
 //                     <div className="text-center py-12 text-white/60">Loading...</div>
 //                   ) : barangList.length === 0 ? (
-//                     <div className="text-center py-12 text-white/60 border-2 border-dashed border-white/20 rounded-xl">
+//                     <div className="text-center py-8 text-white/60 border-2 border-dashed border-white/20 rounded-xl text-sm">
 //                       Tidak ada minuman ditemukan
 //                     </div>
 //                   ) : (
@@ -1173,4 +1263,3 @@ export default function CashierPage() {
 //     </div>
 //   );
 // }
-

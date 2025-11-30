@@ -244,7 +244,7 @@ export default function SportsSection() {
     document.body.style.overflow = 'auto';
   };
 
-  const isCarouselActive = sports.length > 4;
+  const isCarouselActive = sports.length > 1;
 
   if (loading) {
     return (
@@ -284,8 +284,8 @@ export default function SportsSection() {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="hidden md:flex" />
-              <CarouselNext className="hidden md:flex" />
+              <CarouselPrevious className="flex lg:hidden h-8 w-8 border-none bg-black/50 text-white hover:bg-black/70 rounded-full transition-color shadow-lg" />
+              <CarouselNext className="flex lg:hidden h-8 w-8 border-none bg-black/50 text-white hover:bg-black/70 rounded-full transition-color shadow-lg" />
             </Carousel>
           </div>
         ) : (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Menu, X, Calendar, ChevronDown, LogOut } from 'lucide-react';
+import { Menu, X, Calendar, ChevronDown, LogOut, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -47,7 +47,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <div className="flex items-center space-x-8">
               <Link href="/#home" className="text-gray-300 hover:text-white font-medium transition-colors">
                 Home
@@ -58,7 +58,7 @@ export default function Navbar() {
               <Link href="/#pricing" className="text-gray-300 hover:text-white font-medium transition-colors">
                 Pricing
               </Link>
-              {user ? (
+              { user ? (
                 <div className="relative admin-dropdown">
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -125,21 +125,32 @@ export default function Navbar() {
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </Link>
               )}
+              <Link href="/ai-assistant" className="text-gray-300 hover:text-white font-medium transition-colors flex items-center space-x-1">
+                <MessageCircle className="h-4 w-4" />
+                <span>AI Assistant</span>
+              </Link>
               <Link href="/#contact" className="text-gray-300 hover:text-white font-medium transition-colors">
                 Contact
               </Link>
             </div>
           </div>
 
-          {/* CTA Button */}
-          <div className="hidden md:block">
+          {/* CTA Button - Desktop */}
+          <div className="hidden lg:block">
             <Link href="/booking" className="bg-white text-black px-6 py-2 rounded-full font-bold hover:bg-gray-200 transition-colors shadow-lg inline-block">
               Book Now
             </Link>
           </div>
 
+          {/* CTA Button - Mobile & Tablet */}
+          <div className="lg:hidden flex items-center">
+            <Link href="/booking" className="bg-white text-black px-3 sm:px-4 py-1 rounded-full font-medium hover:bg-gray-200 transition-colors shadow-lg text-sm">
+              Book Now
+            </Link>
+          </div>
+
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-gray-300 hover:text-white transition-colors"
@@ -151,7 +162,7 @@ export default function Navbar() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden bg-[#404040] rounded-2xl mt-2 shadow-xl border border-white/10">
+          <div className="lg:hidden bg-[#404040] rounded-2xl mt-2 shadow-xl border border-white/10">
             <div className="px-4 py-3 space-y-3">
               <Link href="/#home" onClick={() => handleNavClick('#home')} className="block text-gray-300 hover:text-white font-medium py-2">
                 Home
@@ -162,22 +173,26 @@ export default function Navbar() {
               <Link href="/#pricing" onClick={() => handleNavClick('#pricing')} className="block text-gray-300 hover:text-white font-medium py-2">
                 Pricing
               </Link>
+              <Link href="/ai-assistant" onClick={() => handleNavClick('/ai-assistant')} className="block text-gray-300 hover:text-emerald-600 font-medium py-2 flex items-center space-x-1">
+                <MessageCircle className="h-4 w-4" />
+                <span>AI Assistant</span>
+              </Link>
 
               {user ? (
                 <div className="border-t border-gray-200 pt-3 mt-3">
-                  <p className="text-gray-500 text-sm font-semibold mb-2">Admin Menu ({user.fullName})</p>
+                  <p className="text-gray-300 text-sm font-semibold mb-2">Admin Menu ({user.fullName})</p>
                   {user.role === 'owner' && (
-                    <Link href="/admin/dashboard" className="block text-gray-700 hover:text-emerald-600 font-medium py-2 pl-3">
+                    <Link href="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-emerald-600 font-medium py-2 pl-3">
                       Dashboard
                     </Link>
                   )}
-                  <Link href="/admin/fields" className="block text-gray-700 hover:text-emerald-600 font-medium py-2 pl-3">
+                  <Link href="/admin/fields" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-emerald-600 font-medium py-2 pl-3">
                     Kelola Lapangan
                   </Link>
-                  <Link href="/admin/sports" className="block text-gray-700 hover:text-emerald-600 font-medium py-2 pl-3">
+                  <Link href="/admin/sports" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-emerald-600 font-medium py-2 pl-3">
                     Kelola Cabang Olahraga
                   </Link>
-                  <Link href="/admin/kasir" className="block text-gray-700 hover:text-emerald-600 font-medium py-2 pl-3">
+                  <Link href="/admin/kasir" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-emerald-600 font-medium py-2 pl-3">
                     Kasir
                   </Link>
                   <button
@@ -185,7 +200,7 @@ export default function Navbar() {
                       logout();
                       setIsMenuOpen(false);
                     }}
-                    className="flex items-center w-full text-red-600 hover:bg-red-50 font-medium py-2 pl-3 rounded-lg transition-colors"
+                    className="flex items-center w-full text-red-700 hover:bg-red-50 font-medium py-2 pl-3 rounded-lg transition-colors"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout
@@ -195,13 +210,13 @@ export default function Navbar() {
                 <Link
                   href="/login"
                   onClick={() => setIsMenuOpen(false)}
-                  className="block w-full text-left text-gray-700 hover:text-emerald-600 font-medium py-2 border-t border-gray-200 pt-3 mt-3"
+                  className="block w-full text-left text-gray-300 hover:text-emerald-600 font-medium py-2 border-t border-gray-200 pt-3 mt-3"
                 >
                   Admin
                 </Link>
               )}
 
-              <Link href="/#contact" onClick={() => handleNavClick('#contact')} className="block text-gray-700 hover:text-emerald-600 font-medium py-2">
+              <Link href="/#contact" onClick={() => handleNavClick('#contact')} className="block text-gray-300 hover:text-emerald-600 font-medium py-2">
                 Contact
               </Link>
               <Link href="/booking" className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-2xl font-semibold mt-3 inline-block text-center">

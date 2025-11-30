@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LogIn, Eye, EyeOff, Calendar, ArrowLeft } from 'lucide-react';
@@ -12,9 +12,27 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const router = useRouter();
+
+  // Watch for user changes to redirect after login
+  useEffect(() => {
+    if (user && loginSuccess) {
+      setLoginSuccess(false);
+      
+      // Check for both 'kasir' and 'cashier' roles (case insensitive)
+      const userRole = user.role.toLowerCase();
+      if (userRole === 'kasir' || userRole === 'cashier') {
+        // Redirect to cashier page for Kasir/Cashier role
+        router.push('/admin/kasir');
+      } else {
+        // Redirect to homepage for other roles
+        router.push('/');
+      }
+    }
+  }, [user, loginSuccess, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,8 +61,8 @@ export default function LoginPage() {
     const result = await login(username, password);
 
     if (result.success) {
-      // Redirect to homepage after successful login
-      router.push('/');
+      // Set login success flag to trigger redirection in useEffect
+      setLoginSuccess(true);
     } else {
       // Provide more specific error messages
       let errorMessage = result.error || 'Login gagal';
