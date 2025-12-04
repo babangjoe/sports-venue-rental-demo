@@ -438,7 +438,8 @@ async function generateContextualResponse(
   intent: ReturnType<typeof recognizeIntent>,
   userMessage: string,
   userRole?: string,
-  systemPrompt?: string
+  systemPrompt?: string,
+  baseUrl?: string
 ): Promise<{
   message: string;
   actions: Array<{
@@ -448,7 +449,7 @@ async function generateContextualResponse(
     url?: string;
   }>;
 }> {
-  const apiUrl = new URL('http://localhost:4000'); // Fallback URL
+  const apiUrl = baseUrl ? new URL(baseUrl) : new URL('http://localhost:4000'); // Fallback URL
   
   try {
     switch (intent.intent) {
@@ -834,7 +835,7 @@ async function generateContextualResponse(
 }
 
 // AI Chat handler function
-async function generateAIResponse(request: ChatRequest): Promise<{
+async function generateAIResponse(request: ChatRequest, baseUrl: string): Promise<{
   message: string;
   actions: Array<{
     type: 'booking' | 'redirect';
@@ -854,7 +855,7 @@ async function generateAIResponse(request: ChatRequest): Promise<{
   // Generate contextual response using system prompt
   const usingFallback = systemPrompt.includes('Anda adalah asisten AI untuk SportArena');
   console.log(`🤖 AI Chat using ${usingFallback ? 'fallback' : 'database'} prompt`);
-  const response = await generateContextualResponse(intent, message, userRole, systemPrompt);
+  const response = await generateContextualResponse(intent, message, userRole, systemPrompt, baseUrl);
   
   return response;
 }
@@ -862,9 +863,10 @@ async function generateAIResponse(request: ChatRequest): Promise<{
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as ChatRequest;
+    const baseUrl = request.nextUrl.origin;
     
     // Generate AI response
-    const aiResponse = await generateAIResponse(body);
+    const aiResponse = await generateAIResponse(body, baseUrl);
     
     return NextResponse.json({
       success: true,

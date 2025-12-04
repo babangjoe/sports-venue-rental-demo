@@ -30,11 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send booking request to main booking API
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : process.env.NODE_ENV === 'production' 
-      ? process.env.NEXT_PUBLIC_BASE_URL 
-      : 'http://localhost:4000';
+    const baseUrl = request.nextUrl.origin;
     
     console.log('Making booking request to:', baseUrl);
     
