@@ -616,26 +616,7 @@ async function generateContextualResponse(
           }
         }];
 
-        // Add inline booking action
-        actions.push({
-          type: 'booking_form',
-          label: 'Booking Langsung di Chat',
-          data: {
-            sport: {
-              code: targetSportCode,
-              name: sportName
-            },
-            availability: availabilityData
-          }
-        });
-
-        if (hasAvailability) {
-          actions.push({
-            type: 'redirect',
-            label: 'Lihat Semua Lapangan',
-            url: '/#sports'
-          });
-        } else {
+        if (!hasAvailability) {
           response = `\n❌ Tidak ada slot tersedia untuk 5 hari ke depan. Coba tanggal yang lebih jauh atau lapangan lain.`;
           actions.push({
             type: 'redirect', 

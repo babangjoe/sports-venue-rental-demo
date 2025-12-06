@@ -13,6 +13,8 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
 
+  const isCashier = user?.role && ['kasir', 'cashier', 'staff kasir', 'Kasir', 'Cashier', 'Staff Kasir'].includes(user.role);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -79,20 +81,24 @@ export default function Navbar() {
                           Dashboard
                         </Link>
                       )}
-                      <Link
-                        href="/admin/fields"
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="block px-4 py-3 text-gray-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5"
-                      >
-                        Kelola Lapangan
-                      </Link>
-                      <Link
-                        href="/admin/sports"
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="block px-4 py-3 text-gray-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5"
-                      >
-                        Kelola Cabang Olahraga
-                      </Link>
+                      {!isCashier && (
+                        <>
+                          <Link
+                            href="/admin/fields"
+                            onClick={() => setIsDropdownOpen(false)}
+                            className="block px-4 py-3 text-gray-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5"
+                          >
+                            Kelola Lapangan
+                          </Link>
+                          <Link
+                            href="/admin/sports"
+                            onClick={() => setIsDropdownOpen(false)}
+                            className="block px-4 py-3 text-gray-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5"
+                          >
+                            Kelola Cabang Olahraga
+                          </Link>
+                        </>
+                      )}
                       <Link
                         href="/admin/kasir"
                         onClick={() => setIsDropdownOpen(false)}
@@ -186,12 +192,16 @@ export default function Navbar() {
                       Dashboard
                     </Link>
                   )}
-                  <Link href="/admin/fields" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-emerald-600 font-medium py-2 pl-3">
-                    Kelola Lapangan
-                  </Link>
-                  <Link href="/admin/sports" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-emerald-600 font-medium py-2 pl-3">
-                    Kelola Cabang Olahraga
-                  </Link>
+                  {!isCashier && (
+                    <>
+                      <Link href="/admin/fields" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-emerald-600 font-medium py-2 pl-3">
+                        Kelola Lapangan
+                      </Link>
+                      <Link href="/admin/sports" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-emerald-600 font-medium py-2 pl-3">
+                        Kelola Cabang Olahraga
+                      </Link>
+                    </>
+                  )}
                   <Link href="/admin/kasir" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-emerald-600 font-medium py-2 pl-3">
                     Kasir
                   </Link>

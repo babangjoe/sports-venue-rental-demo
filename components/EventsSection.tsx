@@ -29,7 +29,7 @@ const events = [
     date: "1 September 2024",
     time: "19:00 - 22:00",
     location: "Padel Center Court",
-    image: "https://images.unsplash.com/photo-1554068865-2484cd665469?q=80&w=1000&auto=format&fit=crop",
+    image: "https://images.unsplash.com/photo-1756670777683-07f9a0af2608?q=80&w=1000&auto=format&fit=crop",
     category: "Special Event"
   },
   {
@@ -47,7 +47,7 @@ const events = [
     date: "Setiap Sabtu",
     time: "09:00 - 12:00",
     location: "Badminton Hall",
-    image: "https://images.unsplash.com/photo-1626224583764-847890e0b3b9?q=80&w=1000&auto=format&fit=crop",
+    image: "https://images.unsplash.com/photo-1732737915298-ba37d6b1aa55?auto=format&fit=crop&w=1600&q=80",
     category: "Community"
   },
   {

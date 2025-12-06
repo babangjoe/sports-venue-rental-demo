@@ -150,6 +150,14 @@ Respon dalam format JSON dengan struktur:
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
+    // Handle /clear command
+    if (inputMessage.trim() === '/clear') {
+      const welcomeMessage = messages[0]; // Keep the first welcome message
+      setMessages([welcomeMessage]);
+      setInputMessage('');
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputMessage,
