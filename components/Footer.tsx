@@ -1,8 +1,34 @@
 'use client';
 
 import { Calendar, Phone, Mail, MapPin, Instagram, Facebook, Twitter, Youtube } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+interface Sport {
+  id: number;
+  sport_name: string;
+}
 
 export default function Footer() {
+  const [sports, setSports] = useState<Sport[]>([]);
+
+  useEffect(() => {
+    const fetchSports = async () => {
+      try {
+        const response = await fetch('/api/sports?show_all=true');
+        const result = await response.json();
+        if (Array.isArray(result)) {
+          setSports(result);
+        } else if (result.data) {
+          setSports(result.data);
+        }
+      } catch (error) {
+        console.error('Error fetching sports:', error);
+      }
+    };
+
+    fetchSports();
+  }, []);
+
   return (
     <footer className="bg-[#262626] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -51,8 +77,8 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#pricing" className="text-gray-400 hover:text-blue-500 transition-colors">
-                  Pricing
+                <a href="#events" className="text-gray-400 hover:text-blue-500 transition-colors">
+                  Events
                 </a>
               </li>
               <li>
@@ -77,36 +103,17 @@ export default function Footer() {
           <div>
             <h4 className="text-xl font-bold mb-6">Cabang Olahraga</h4>
             <ul className="space-y-3">
-              <li>
-                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">
-                  Futsal
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">
-                  Mini Soccer
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">
-                  Basketball
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">
-                  Badminton
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">
-                  Tennis
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">
-                  Volleyball
-                </a>
-              </li>
+              {sports.length > 0 ? (
+                sports.map((sport) => (
+                  <li key={sport.id}>
+                    <a href="#sports" className="text-gray-300 hover:text-blue-400 transition-colors">
+                      {sport.sport_name}
+                    </a>
+                  </li>
+                ))
+              ) : (
+                <li className="text-gray-400 italic">Memuat...</li>
+              )}
             </ul>
           </div>
 
@@ -114,16 +121,21 @@ export default function Footer() {
           <div>
             <h4 className="text-xl font-bold mb-6">Kontak Kami</h4>
             <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <MapPin className="h-5 w-5 text-emerald-400 mt-1 flex-shrink-0" />
+              <a 
+                href="https://maps.app.goo.gl/R2YYYN147ARiTVWb6" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-start space-x-3 group"
+              >
+                <MapPin className="h-5 w-5 text-emerald-400 mt-1 flex-shrink-0 group-hover:text-emerald-300 transition-colors" />
                 <div>
-                  <p className="text-gray-300">
-                    Jl. Sudirman No. 123<br />
-                    Jakarta Pusat, 10270<br />
+                  <p className="text-gray-300 group-hover:text-white transition-colors">
+                    Jl. Pamulang 2<br />
+                    Tangerang Selatan, 12345<br />
                     Indonesia
                   </p>
                 </div>
-              </div>
+              </a>
               <div className="flex items-center space-x-3">
                 <Phone className="h-5 w-5 text-blue-400 flex-shrink-0" />
                 <p className="text-gray-300">+62 21 1234-5678</p>
@@ -135,13 +147,13 @@ export default function Footer() {
             </div>
 
             {/* Operating Hours */}
-            <div className="mt-6">
+            {/* <div className="mt-6">
               <h5 className="font-semibold text-white mb-2">Jam Operasional</h5>
               <p className="text-gray-300 text-sm">
                 Senin - Minggu: 06:00 - 22:00<br />
                 Customer Service: 24/7
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
 

@@ -514,15 +514,15 @@ Respon dalam format JSON dengan struktur:
 
                 return (
                 <div key={field.id} className="bg-[#1a1a1a] rounded-lg p-3 border border-white/5">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-1 sm:gap-0">
                     <div className="flex items-center space-x-2">
-                      <MapPin className="h-4 w-4 text-green-400" />
-                      <span className="font-medium text-white">{field.name}</span>
+                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+                      <span className="font-medium text-white text-xs sm:text-base">{field.name}</span>
                       {field.offlineMode && (
-                        <span className="px-2 py-1 bg-yellow-600/20 text-yellow-400 rounded text-xs">Offline</span>
+                        <span className="px-2 py-1 bg-yellow-600/20 text-yellow-400 rounded text-[10px] sm:text-xs">Offline</span>
                       )}
                     </div>
-                    <div className="text-green-400 font-medium">
+                    <div className="text-green-400 font-medium text-[10px] sm:text-base whitespace-nowrap sm:text-right pl-5 sm:pl-0">
                       Rp {field.price.toLocaleString('id-ID')}/jam
                     </div>
                   </div>
@@ -537,7 +537,7 @@ Respon dalam format JSON dengan struktur:
                         key={timeSlot}
                         onClick={() => isAvailable && handleSlotClick(field, dateData.date, timeSlot)}
                         disabled={!isAvailable}
-                        className={`px-2 py-1 rounded text-xs transition-all border
+                        className={`px-2 py-1 rounded text-xs transition-all border flex items-center justify-center
                           ${!isAvailable 
                             ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed opacity-50 border-transparent' 
                             : isSelected
@@ -947,41 +947,43 @@ Respon dalam format JSON dengan struktur:
       )}
 
       {/* Chat Container */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-[#404040] rounded-2xl shadow-xl">
+      <div className="max-w-4xl mx-auto px-0 sm:px-6 lg:px-8 py-0 sm:py-6 h-[calc(100vh-73px)] sm:h-auto flex flex-col">
+        <div className="bg-[#404040] rounded-none sm:rounded-2xl shadow-xl flex flex-col h-full overflow-hidden">
           {/* Messages Area */}
-          <div className="h-[600px] overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
             {messages.map(message => (
               <div
                 key={message.id}
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl p-4 ${
+                  className={`${message.sender === 'ai' ? 'max-w-full' : 'max-w-[85%]'} sm:max-w-[80%] rounded-2xl p-3 sm:p-4 ${
                     message.sender === 'user'
                       ? 'bg-blue-600 text-white'
                       : 'bg-[#333333] text-gray-300 border border-white/10'
                   }`}
                 >
-                  <div className="flex items-start space-x-3">
+                  <div className="flex items-start space-x-2 sm:space-x-3">
                     {message.sender === 'ai' && (
-                      <div className="bg-gradient-to-r from-blue-600 to-red-600 rounded-lg p-1">
-                        <Bot className="h-4 w-4 text-white" />
+                      <div className="bg-gradient-to-r from-blue-600 to-red-600 rounded-lg p-1 flex-shrink-0">
+                        <Bot className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                       </div>
                     )}
                     {message.sender === 'user' && (
-                      <div className="bg-blue-700 rounded-lg p-1">
-                        <UserIcon className="h-4 w-4 text-white" />
+                      <div className="bg-blue-700 rounded-lg p-1 flex-shrink-0">
+                        <UserIcon className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                       </div>
                     )}
-                    <div className="flex-1">
-                      <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed break-words">{message.content}</p>
                       {message.actions && message.actions.length > 0 && (
                         <div className="mt-3 space-y-3">
                           {message.actions.map((action, index) => (
-                            <div key={index}>
+                            <div key={index} className="w-full overflow-hidden">
                               {action.type === 'availability_cards' ? (
-                                <AvailabilityCards data={action.data} />
+                                <div className="w-full overflow-x-auto">
+                                  <AvailabilityCards data={action.data} />
+                                </div>
                               ) 
                               : action.type === 'inline_booking_form' ? (
                                 <InlineBookingForm data={action.data} />

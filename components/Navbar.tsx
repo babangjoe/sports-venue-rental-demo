@@ -37,7 +37,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center space-x-2">
             <div className="bg-gradient-to-r from-blue-600 to-red-600 rounded-xl p-2">
               <Calendar className="h-6 w-6 text-white" />
             </div>
@@ -55,8 +55,8 @@ export default function Navbar() {
               <Link href="/#sports" className="text-gray-300 hover:text-white font-medium transition-colors">
                 Sports
               </Link>
-              <Link href="/#pricing" className="text-gray-300 hover:text-white font-medium transition-colors">
-                Pricing
+              <Link href="/#events" className="text-gray-300 hover:text-white font-medium transition-colors">
+                Events
               </Link>
               { user ? (
                 <div className="relative admin-dropdown">
@@ -170,8 +170,8 @@ export default function Navbar() {
               <Link href="/#sports" onClick={() => handleNavClick('#sports')} className="block text-gray-300 hover:text-white font-medium py-2">
                 Sports
               </Link>
-              <Link href="/#pricing" onClick={() => handleNavClick('#pricing')} className="block text-gray-300 hover:text-white font-medium py-2">
-                Pricing
+              <Link href="/#events" onClick={() => handleNavClick('#events')} className="block text-gray-300 hover:text-white font-medium py-2">
+                Events
               </Link>
               <Link href="/ai-assistant" onClick={() => handleNavClick('/ai-assistant')} className="block text-gray-300 hover:text-emerald-600 font-medium py-2 flex items-center space-x-1">
                 <MessageCircle className="h-4 w-4" />

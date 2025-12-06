@@ -37,16 +37,18 @@ const sportConfig: Record<string, { icon: any, color: string }> = {
   'basketball': { icon: Dribbble, color: 'from-orange-500 to-red-600' },
   'badminton': { icon: Shuttlecock, color: 'from-purple-500 to-pink-600' },
   'padel': { icon: Activity, color: 'from-yellow-500 to-orange-600' },
+  'tenis': { icon: Activity, color: 'from-green-500 to-lime-600' },
 };
 
 const SportCard = ({ sport, onDetailClick }: { sport: Sport; onDetailClick: (sport: Sport) => void }) => {
   const config = sportConfig[sport.sport_type] || { icon: Target, color: 'from-gray-500 to-slate-600' };
   const Icon = config.icon;
+  const isAvailable = sport.is_available === 1;
   
   return (
-    <div className="bg-[#404040] rounded-2xl p-8 shadow-lg border border-white/5 hover:border-blue-500/50 hover:shadow-blue-500/20 transition-all duration-300 group cursor-pointer flex flex-col justify-between h-full">
+    <div className={`bg-[#404040] rounded-2xl p-8 shadow-lg border border-white/5 ${isAvailable ? 'hover:border-blue-500/50 hover:shadow-blue-500/20 cursor-pointer' : 'opacity-80'} transition-all duration-300 group flex flex-col justify-between h-full`}>
       <div>
-        <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-r ${config.color} mb-6 group-hover:scale-110 transition-transform shadow-lg`}>
+        <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-r ${config.color} mb-6 ${isAvailable ? 'group-hover:scale-110' : ''} transition-transform shadow-lg`}>
           <Icon className="h-8 w-8 text-white" />
         </div>
         
@@ -60,10 +62,11 @@ const SportCard = ({ sport, onDetailClick }: { sport: Sport; onDetailClick: (spo
       </div>
       
       <button 
-        onClick={() => onDetailClick(sport)}
-        className={`w-full py-3 px-6 rounded-xl font-semibold text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all inline-block text-center group-hover:bg-blue-600 group-hover:border-blue-600`}
+        onClick={() => isAvailable && onDetailClick(sport)}
+        disabled={!isAvailable}
+        className={`w-full py-3 px-6 rounded-xl font-semibold text-white bg-white/5 border border-white/10 transition-all inline-block text-center ${isAvailable ? 'hover:bg-white/10 group-hover:bg-blue-600 group-hover:border-blue-600' : 'cursor-not-allowed opacity-50'}`}
       >
-        Lihat Detail
+        {isAvailable ? 'Lihat Detail' : 'Coming Soon'}
       </button>
     </div>
   );
@@ -92,6 +95,7 @@ const getSportImage = (type: string, customUrl?: string) => {
     case 'basketball': return 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1000&auto=format&fit=crop';
     case 'badminton': return 'https://images.unsplash.com/photo-1626224583764-847890e0b3b9?q=80&w=1000&auto=format&fit=crop';
     case 'padel': return 'https://images.unsplash.com/photo-1554068865-2484cd665469?q=80&w=1000&auto=format&fit=crop'; // Generic court/tennis
+    case 'tenis': return 'https://images.unsplash.com/photo-1595435934249-fd66d1298819?q=80&w=1000&auto=format&fit=crop';
     default: return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1000&auto=format&fit=crop'; // Generic gym
   }
 };
@@ -203,7 +207,7 @@ export default function SportsSection() {
   useEffect(() => {
     const fetchSports = async () => {
       try {
-        const response = await fetch('/api/sports');
+        const response = await fetch('/api/sports?show_all=true');
         const result = await response.json();
         if (Array.isArray(result)) {
           setSports(result);
@@ -284,8 +288,8 @@ export default function SportsSection() {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="flex lg:hidden h-8 w-8 border-none bg-black/50 text-white hover:bg-black/70 rounded-full transition-color shadow-lg" />
-              <CarouselNext className="flex lg:hidden h-8 w-8 border-none bg-black/50 text-white hover:bg-black/70 rounded-full transition-color shadow-lg" />
+              <CarouselPrevious className="flex h-12 w-12 border-none bg-black/50 text-white hover:bg-black/70 rounded-full transition-color shadow-lg -left-4 lg:-left-12" />
+              <CarouselNext className="flex h-12 w-12 border-none bg-black/50 text-white hover:bg-black/70 rounded-full transition-color shadow-lg -right-4 lg:-right-12" />
             </Carousel>
           </div>
         ) : (

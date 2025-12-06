@@ -476,7 +476,7 @@ async function generateContextualResponse(
           dates.push({
             date: dateStr,
             dayName: date.toLocaleDateString('id-ID', { weekday: 'long' }),
-            formatted: date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })
+            formatted: date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
           });
         }
         

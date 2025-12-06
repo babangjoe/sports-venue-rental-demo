@@ -2,7 +2,7 @@
 
 import Hero from '@/components/Hero';
 import SportsSection from '@/components/SportsSection';
-import PricingSection from '@/components/PricingSection';
+import EventsSection from '@/components/EventsSection';
 import TestimonialSection from '@/components/TestimonialSection';
 import BookingSection from '@/components/BookingSection';
 import Footer from '@/components/Footer';
@@ -12,9 +12,8 @@ export default function HomeWrapper() {
     <>
       <Hero />
       <SportsSection />
-      <PricingSection />
+      <EventsSection />
       <TestimonialSection />
-      <BookingSection />
       <Footer />
     </>
   );
