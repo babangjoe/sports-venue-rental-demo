@@ -288,8 +288,12 @@ export default function SportsSection() {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="flex h-12 w-12 border-none bg-[#2b2b2b] text-white hover:bg-blue-600 rounded-full transition-colors shadow-lg -left-4 lg:-left-12" />
-              <CarouselNext className="flex h-12 w-12 border-none bg-[#2b2b2b] text-white hover:bg-blue-600 rounded-full transition-colors shadow-lg -right-4 lg:-right-12" />
+              <CarouselPrevious className="flex h-20 w-20 border-none bg-transparent text-white/50 hover:text-blue-500 hover:bg-transparent transition-all -left-8 lg:-left-20">
+                <span className="text-7xl font-black italic tracking-tighter">&lt;</span>
+              </CarouselPrevious>
+              <CarouselNext className="flex h-20 w-20 border-none bg-transparent text-white/50 hover:text-blue-500 hover:bg-transparent transition-all -right-8 lg:-right-20">
+                <span className="text-7xl font-black italic tracking-tighter">&gt;</span>
+              </CarouselNext>
             </Carousel>
           </div>
         ) : (
