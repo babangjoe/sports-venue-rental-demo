@@ -456,7 +456,7 @@ async function generateContextualResponse(
     switch (intent.intent) {
       case 'availability': {
         // Fetch real data (use context if available, otherwise fetch from API)
-        let sportsData, fieldsData;
+        let sportsData: any, fieldsData: any;
 
         if (contextData?.sports && contextData?.fields) {
           sportsData = contextData.sports;
@@ -662,7 +662,7 @@ async function generateContextualResponse(
       }
 
       case 'pricing': {
-        let sportsData, fieldsData;
+        let sportsData: any, fieldsData: any;
 
         if (contextData?.sports && contextData?.fields) {
           sportsData = contextData.sports;
