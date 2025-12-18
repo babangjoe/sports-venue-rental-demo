@@ -180,35 +180,51 @@ const DashboardPage = () => {
     }
 
     const now = new Date();
+    // Reset time to start of day for accurate comparison
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const parseDate = (dateStr: string) => {
+      const date = new Date(dateStr);
+      // If parsing fails or date is invalid, it returns NaN
+      return isNaN(date.getTime()) ? null : new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    };
+
     switch (dateRange) {
       case 'daily':
         result = result.filter(booking => {
-          const bookingDate = new Date(booking.booking_date);
-          return bookingDate.toDateString() === now.toDateString();
+          // Filter by TRANSACTION date (created_at), not game date
+          const dateStr = booking.created_at || booking.booking_date;
+          // Handle both ISO string and potential Date objects if any
+          const transDate = new Date(dateStr);
+
+          return (
+            transDate.getDate() === now.getDate() &&
+            transDate.getMonth() === now.getMonth() &&
+            transDate.getFullYear() === now.getFullYear()
+          );
         });
         break;
       case 'weekly':
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(now.getDate() - 7);
+        const oneWeekAgo = new Date(today);
+        oneWeekAgo.setDate(today.getDate() - 7);
         result = result.filter(booking => {
-          const bookingDate = new Date(booking.booking_date);
-          return bookingDate >= oneWeekAgo && bookingDate <= now;
+          const transDate = new Date(booking.created_at || booking.booking_date);
+          return transDate >= oneWeekAgo;
         });
         break;
       case 'monthly':
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(now.getMonth() - 1);
         result = result.filter(booking => {
-          const bookingDate = new Date(booking.booking_date);
-          return bookingDate >= oneMonthAgo && bookingDate <= now;
+          const transDate = new Date(booking.created_at || booking.booking_date);
+          return (
+            transDate.getMonth() === today.getMonth() &&
+            transDate.getFullYear() === today.getFullYear()
+          );
         });
         break;
       case 'yearly':
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(now.getFullYear() - 1);
         result = result.filter(booking => {
-          const bookingDate = new Date(booking.booking_date);
-          return bookingDate >= oneYearAgo && bookingDate <= now;
+          const transDate = new Date(booking.created_at || booking.booking_date);
+          return transDate.getFullYear() === today.getFullYear();
         });
         break;
     }
@@ -224,19 +240,24 @@ const DashboardPage = () => {
   // We can just use 'filteredBookings' for the charts as it reflects current selection.
 
   // Confirmed bookings by sport and month
+  // Bookings by sport and month (including pending for visibility)
   const confirmedBookingsBySportAndMonth = filteredBookings
     .filter(b => {
       const bookingDate = new Date(b.booking_date);
-      const isConfirmed = b.booking_status === 'confirmed' || b.booking_status === 'completed';
+      // Include pending bookings so the user can see their recent action
+      const isValidStatus = b.booking_status === 'confirmed' || b.booking_status === 'completed' || b.booking_status === 'pending';
       const isWithinThreeMonths = bookingDate >= threeMonthsAgoStart;
-      return isConfirmed && isWithinThreeMonths;
+      return isValidStatus && isWithinThreeMonths;
     })
     .reduce((acc, booking) => {
       const field = fields.find(f => f.id.toString() === booking.field_id.toString());
       const sport = field ? sports.find(s => s.id === field.sport_id) : null;
       const sportName = sport ? sport.sport_name : 'Unknown';
-      const bookingDate = new Date(booking.booking_date);
-      const monthYear = bookingDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+      // Fix date parsing issues by ensuring we use the booking_date string directly if possible or standardizing
+      // Booking date is typically YYYY-MM-DD.
+      const dateParts = new Date(booking.booking_date);
+      const monthYear = dateParts.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
       if (!acc[monthYear]) {
         acc[monthYear] = {};
@@ -248,29 +269,35 @@ const DashboardPage = () => {
       return acc;
     }, {} as Record<string, Record<string, number>>);
 
-  const topSportEachMonth = Object.entries(confirmedBookingsBySportAndMonth).map(([month, sportsData]) => {
-    let topSport = 'Unknown';
-    let maxCount = 0;
+  // Collect all unique sport names for dynamic bar generation
+  const allSportNames = Array.from(new Set(
+    filteredBookings.map(b => {
+      const field = fields.find(f => f.id.toString() === b.field_id.toString());
+      const sport = field ? sports.find(s => s.id === field.sport_id) : null;
+      return sport ? sport.sport_name : 'Unknown';
+    })
+  ));
 
-    Object.entries(sportsData).forEach(([sportName, count]) => {
-      if (count > maxCount) {
-        maxCount = count;
-        topSport = sportName;
-      }
+  const trendChartData = Object.entries(confirmedBookingsBySportAndMonth)
+    .map(([month, sportsData]) => {
+      return {
+        name: month,
+        ...sportsData
+      };
+    })
+    .sort((a, b) => {
+      const [monthA, yearA] = a.name.split(' ');
+      const [monthB, yearB] = b.name.split(' ');
+      const dateA = new Date(`${monthA} 1, ${yearA}`);
+      const dateB = new Date(`${monthB} 1, ${yearB}`);
+      return dateA.getTime() - dateB.getTime();
     });
 
-    return { name: month, sport: topSport, value: maxCount };
-  });
-
-  const trendChartData = topSportEachMonth.sort((a, b) => {
-    const [monthA, yearA] = a.name.split(' ');
-    const [monthB, yearB] = b.name.split(' ');
-    const dateA = new Date(`${monthA} 1, ${yearA}`);
-    const dateB = new Date(`${monthB} 1, ${yearB}`);
-    return dateA.getTime() - dateB.getTime();
-  });
-
   const revenueBySport = filteredBookings
+    // Include pending in potential revenue view, or keep it strict? 
+    // Usually revenue implies confirmed money. But user seems to want to see "activity".
+    // Let's keep revenue strict for now, but valid booking trends lenient.
+    // User complaint was about "Booking Trends" specifically.
     .filter(b => b.booking_status === 'confirmed' || b.booking_status === 'completed')
     .reduce((acc, booking) => {
       const field = fields.find(f => f.id.toString() === booking.field_id.toString());
@@ -338,28 +365,28 @@ const DashboardPage = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-[140px] bg-zinc-900/50 border-zinc-800 focus:ring-emerald-500/20">
+              <SelectTrigger className="w-[140px] bg-zinc-900/50 border-zinc-800 focus:ring-emerald-500/20 text-white">
                 <Calendar className="mr-2 h-4 w-4 text-zinc-400" />
                 <SelectValue placeholder="Period" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Time</SelectItem>
-                <SelectItem value="daily">Today</SelectItem>
-                <SelectItem value="weekly">This Week</SelectItem>
-                <SelectItem value="monthly">This Month</SelectItem>
-                <SelectItem value="yearly">This Year</SelectItem>
+              <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+                <SelectItem value="all" className="focus:bg-zinc-800 focus:text-white cursor-pointer">All Time</SelectItem>
+                <SelectItem value="daily" className="focus:bg-zinc-800 focus:text-white cursor-pointer">Today</SelectItem>
+                <SelectItem value="weekly" className="focus:bg-zinc-800 focus:text-white cursor-pointer">This Week</SelectItem>
+                <SelectItem value="monthly" className="focus:bg-zinc-800 focus:text-white cursor-pointer">This Month</SelectItem>
+                <SelectItem value="yearly" className="focus:bg-zinc-800 focus:text-white cursor-pointer">This Year</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={selectedSport} onValueChange={setSelectedSport}>
-              <SelectTrigger className="w-[140px] bg-zinc-900/50 border-zinc-800 focus:ring-emerald-500/20">
+              <SelectTrigger className="w-[140px] bg-zinc-900/50 border-zinc-800 focus:ring-emerald-500/20 text-white">
                 <Filter className="mr-2 h-4 w-4 text-zinc-400" />
                 <SelectValue placeholder="Sport" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Sports</SelectItem>
+              <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+                <SelectItem value="all" className="focus:bg-zinc-800 focus:text-white cursor-pointer">All Sports</SelectItem>
                 {sports.map(sport => (
-                  <SelectItem key={sport.id} value={sport.id.toString()}>
+                  <SelectItem key={sport.id} value={sport.id.toString()} className="focus:bg-zinc-800 focus:text-white cursor-pointer">
                     {sport.sport_name}
                   </SelectItem>
                 ))}
@@ -467,36 +494,31 @@ const DashboardPage = () => {
                       itemStyle={{ color: '#e4e4e7' }}
                       labelStyle={{ color: '#a1a1aa', marginBottom: '4px' }}
                     />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={50}>
-                      {trendChartData.map((entry, index) => {
-                        const sportColors: Record<string, string> = {
-                          'Futsal': '#3b82f6',
-                          'Badminton': '#10b981',
-                          'Basketball': '#f59e0b',
-                          'Mini Soccer': '#ef4444',
-                          'Unknown': '#6b7280'
-                        };
-                        return <Cell key={`cell-${index}`} fill={sportColors[entry.sport] || '#8b5cf6'} />;
-                      })}
-                    </Bar>
+                    {allSportNames.map((sportName, index) => {
+                      const sportColors: Record<string, string> = {
+                        'Futsal': '#3b82f6',
+                        'Badminton': '#10b981',
+                        'Basketball': '#f59e0b',
+                        'Mini Soccer': '#ef4444',
+                        'Padel': '#555555',
+                        'Tennis': '#eab308',
+                        'Unknown': '#6b7280'
+                      };
+                      // Use a fallback color generator if sport not in map
+                      const color = sportColors[sportName] || `hsl(${index * 60}, 70%, 50%)`;
+
+                      return (
+                        <Bar
+                          key={sportName}
+                          dataKey={sportName}
+                          fill={color}
+                          radius={[4, 4, 0, 0]}
+                          maxBarSize={50}
+                          stackId="a"
+                        />
+                      );
+                    })}
                     <Legend
-                      payload={
-                        [...new Set(trendChartData.map(item => item.sport))].map(sport => {
-                          const sportColors: Record<string, string> = {
-                            'Futsal': '#3b82f6',
-                            'Badminton': '#10b981',
-                            'Basketball': '#f59e0b',
-                            'Mini Soccer': '#ef4444',
-                            'Unknown': '#6b7280'
-                          };
-                          return {
-                            id: sport,
-                            type: 'square',
-                            value: sport,
-                            color: sportColors[sport] || '#8b5cf6'
-                          };
-                        })
-                      }
                       verticalAlign="bottom"
                       height={36}
                       formatter={(value) => <span style={{ color: '#a1a1aa' }}>{value}</span>}

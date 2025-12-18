@@ -110,6 +110,14 @@ export interface SystemPrompt {
 // Helper function to check if we're in browser
 const isBrowser = () => typeof window !== 'undefined';
 
+// Helper function to get local time in ISO format (without UTC offset)
+function getLocalISOString(): string {
+    const now = new Date();
+    // Convert to local time by accounting for timezone offset
+    const localTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+    return localTime.toISOString();
+}
+
 // Generic localStorage getter
 export function getFromLocalStorage<T>(key: string): T[] {
     if (!isBrowser()) return [];
@@ -164,11 +172,11 @@ export function getSportById(id: number): Sport | null {
 }
 
 export function createSport(data: Omit<Sport, 'id'>): Sport {
-    const sports = getSports(true);
+    const sports = getFromLocalStorage<Sport>(DEMO_STORAGE_KEYS.SPORTS);
     const newSport: Sport = {
         ...data,
         id: generateId(sports),
-        updated_at: new Date().toISOString(),
+        updated_at: getLocalISOString(),
     };
     sports.push(newSport);
     setToLocalStorage(DEMO_STORAGE_KEYS.SPORTS, sports);
@@ -183,7 +191,7 @@ export function updateSport(id: number, data: Partial<Sport>): Sport | null {
     sports[index] = {
         ...sports[index],
         ...data,
-        updated_at: new Date().toISOString(),
+        updated_at: getLocalISOString(),
     };
     setToLocalStorage(DEMO_STORAGE_KEYS.SPORTS, sports);
     return sports[index];
@@ -234,7 +242,7 @@ export function createField(data: Omit<Field, 'id'>, images?: string[]): Field {
     const newField: Field = {
         ...data,
         id: generateId(fields),
-        updated_at: new Date().toISOString(),
+        updated_at: getLocalISOString(),
     };
     fields.push(newField);
     setToLocalStorage(DEMO_STORAGE_KEYS.FIELDS, fields);
@@ -261,7 +269,7 @@ export function updateField(id: number, data: Partial<Field>, images?: string[])
     fields[index] = {
         ...fields[index],
         ...data,
-        updated_at: new Date().toISOString(),
+        updated_at: getLocalISOString(),
     };
     setToLocalStorage(DEMO_STORAGE_KEYS.FIELDS, fields);
 
@@ -342,11 +350,15 @@ export function getBookingById(id: number): Booking | null {
 
 export function createBooking(data: Omit<Booking, 'id' | 'created_at'>): Booking {
     const bookings = getFromLocalStorage<Booking>(DEMO_STORAGE_KEYS.BOOKINGS);
+    const now = new Date();
+    // Use local time instead of UTC
+    const localTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, -1);
+
     const newBooking: Booking = {
         ...data,
         id: generateId(bookings),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: localTime,
+        updated_at: localTime,
     };
     bookings.push(newBooking);
     setToLocalStorage(DEMO_STORAGE_KEYS.BOOKINGS, bookings);
@@ -358,10 +370,13 @@ export function updateBooking(id: number, data: Partial<Booking>): Booking | nul
     const index = bookings.findIndex(b => b.id === id);
     if (index === -1) return null;
 
+    const now = new Date();
+    const localTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, -1);
+
     bookings[index] = {
         ...bookings[index],
         ...data,
-        updated_at: new Date().toISOString(),
+        updated_at: localTime,
     };
     setToLocalStorage(DEMO_STORAGE_KEYS.BOOKINGS, bookings);
     return bookings[index];
@@ -371,7 +386,7 @@ export function updateMultipleBookings(ids: number[], data: Partial<Booking>): v
     const bookings = getFromLocalStorage<Booking>(DEMO_STORAGE_KEYS.BOOKINGS);
     const updatedBookings = bookings.map(b => {
         if (ids.includes(b.id)) {
-            return { ...b, ...data, updated_at: new Date().toISOString() };
+            return { ...b, ...data, updated_at: getLocalISOString() };
         }
         return b;
     });
@@ -452,7 +467,7 @@ export function createPemasukan(data: Omit<Pemasukan, 'id' | 'created_at' | 'nom
         ...data,
         id: generateId(items),
         nomor_invoice: generateInvoiceNumber(),
-        created_at: new Date().toISOString(),
+        created_at: getLocalISOString(),
     };
     items.push(newItem);
     setToLocalStorage(DEMO_STORAGE_KEYS.PEMASUKAN, items);
@@ -494,8 +509,8 @@ export function createSystemPrompt(data: Omit<SystemPrompt, 'id' | 'created_at' 
         id: generateId(prompts),
         is_active: false,
         version: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: getLocalISOString(),
+        updated_at: getLocalISOString(),
     };
     prompts.push(newPrompt);
     setToLocalStorage(DEMO_STORAGE_KEYS.SYSTEM_PROMPTS, prompts);
@@ -517,7 +532,7 @@ export function updateSystemPrompt(id: number, data: Partial<SystemPrompt>): Sys
     prompts[index] = {
         ...prompts[index],
         ...data,
-        updated_at: new Date().toISOString(),
+        updated_at: getLocalISOString(),
         version: data.prompt_content ? (prompts[index].version || 0) + 1 : prompts[index].version,
     };
     setToLocalStorage(DEMO_STORAGE_KEYS.SYSTEM_PROMPTS, prompts);

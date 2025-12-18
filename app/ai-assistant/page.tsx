@@ -43,7 +43,7 @@ export default function AIAssistantPage() {
   // Demo Data Hooks
   const { sports } = useSportsDemo();
   const { fields } = useFieldsDemo();
-  const { bookings } = useBookingsDemo();
+  const { bookings, createBooking } = useBookingsDemo();
 
   // Booking form state
   const [showBookingForm, setShowBookingForm] = useState(false);
@@ -667,24 +667,28 @@ Respon dalam format JSON dengan struktur:
 
           setIsSubmitting(true);
           try {
-            const response = await fetch('/api/ai-chat/booking', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                customer_name: name,
-                whatsapp_number: whatsapp,
-                field_id: data.field,
-                field_name: data.fieldName,
-                booking_date: data.date,
-                time_slots: data.selectedTimes,
-                total_price: data.totalPrice
-              })
+            // Use local createBooking instead of API to ensure Demo Mode works
+            const result = createBooking({
+              field_id: Number(data.field),
+              field_name: data.fieldName,
+              booking_date: data.date,
+              time_slots: data.selectedTimes,
+              total_price: data.totalPrice,
+              customer_name: name,
+              customer_phone: whatsapp,
+              booking_status: 'pending',
+              payment_status: 'pending'
             });
 
-            const result = await response.json();
-            if (response.ok) {
+            // Simulate API delay slightly for better UX
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            if (result.success) {
               setIsSuccess(true);
-              setBookingResult(result.data);
+              setBookingResult({
+                booking_code: `BOOK-${result.data?.id}`,
+                ...result.data
+              });
 
               const successMsg: Message = {
                 id: Date.now().toString(),
@@ -696,6 +700,8 @@ Respon dalam format JSON dengan struktur:
             } else {
               alert(result.error || 'Booking gagal');
             }
+
+
           } catch (err) {
             console.error(err);
             alert('Gagal memproses booking');
@@ -879,8 +885,8 @@ Respon dalam format JSON dengan struktur:
                         <button
                           onClick={() => handleActivatePrompt(prompt.id)}
                           className={`px-3 py-1 rounded-lg text-sm transition-colors ${prompt.is_active
-                              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
                             }`}
                         >
                           {prompt.is_active ? 'Deactivate' : 'Activate'}
@@ -894,8 +900,8 @@ Respon dalam format JSON dengan struktur:
                         <button
                           onClick={() => handleDeletePrompt(prompt.id)}
                           className={`px-3 py-1 rounded-lg text-sm transition-colors ${prompt.id === 'default'
-                              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                              : 'bg-red-600 hover:bg-red-700 text-white'
+                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            : 'bg-red-600 hover:bg-red-700 text-white'
                             }`}
                           disabled={prompt.id === 'default'}
                         >
@@ -977,8 +983,8 @@ Respon dalam format JSON dengan struktur:
               >
                 <div
                   className={`${message.sender === 'ai' ? 'max-w-full' : 'max-w-[85%]'} sm:max-w-[80%] rounded-2xl p-3 sm:p-4 ${message.sender === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-[#333333] text-gray-300 border border-white/10'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-[#333333] text-gray-300 border border-white/10'
                     }`}
                 >
                   <div className="flex items-start space-x-2 sm:space-x-3">
