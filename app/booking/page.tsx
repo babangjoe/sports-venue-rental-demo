@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, ArrowLeft, Target, Zap, DribbbleIcon as Dribbble, ShuffleIcon as Shuttlecock, CheckCircle, User, Phone } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useBookingsDemo, useFieldsDemo, useSportsDemo } from '@/hooks/useDemoData';
+import { toast } from 'sonner'; // Assuming we can use sonner here, or fallback to alert
 
 // Data struktur untuk ikon olahraga
 const sportIcons = {
@@ -18,117 +21,17 @@ const timeSlots = [
   '18:00', '19:00', '20:00', '21:00', '22:00'
 ];
 
-// Function to fetch booked time slots from API
-const getBookedSlots = async (fieldId: string, date: string) => {
-  try {
-    // In booking form, fieldId might be passed as string from select value
-    // but if it comes from database it's a number.
-    // Ensure we pass it correctly.
-    
-    // Check if fieldId is a valid number string
-    if (!fieldId || isNaN(Number(fieldId))) {
-         console.error('Invalid fieldId:', fieldId);
-         return [];
-    }
-
-    const response = await fetch(`/api/booking/check-availability?fieldId=${fieldId}&date=${date}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch availability');
-    }
-    const data = await response.json();
-    return data.bookedSlots || [];
-  } catch (error) {
-    console.error('Error fetching booked slots:', error);
-    return []; // Return empty array in case of error
-  }
-};
-
-// Function to fetch all bookings
-const getAllBookings = async () => {
-  try {
-    const response = await fetch('/api/booking');
-    if (!response.ok) {
-      throw new Error('Failed to fetch bookings');
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching bookings:', error);
-    return [];
-  }
-};
-
-// Function to fetch bookings with optional filters
-const getBookings = async (filters: { fieldId?: string; date?: string; status?: string } = {}) => {
-  const { fieldId, date, status } = filters;
-  let url = '/api/booking';
-  
-  const params = [];
-  if (fieldId) params.push(`fieldId=${fieldId}`);
-  if (date) params.push(`date=${date}`);
-  if (status) params.push(`status=${status}`);
-  
-  if (params.length > 0) {
-    url += `?${params.join('&')}`;
-  }
-  
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Failed to fetch bookings');
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching bookings:', error);
-    return [];
-  }
-};
-
-// Function to fetch sports data from API
-const getSports = async () => {
-  try {
-    const response = await fetch('/api/sports?isAvailable=true'); // Only fetch available sports
-    if (!response.ok) {
-      throw new Error('Failed to fetch sports');
-    }
-    const result = await response.json();
-    // Handle both array (legacy) and { data: [] } formats
-    return Array.isArray(result) ? result : (result.data || []);
-  } catch (error) {
-    console.error('Error fetching sports:', error);
-    return [];
-  }
-};
-
-// Function to fetch fields data from API
-const getFields = async (sportId?: number) => {
-  try {
-    let url = '/api/fields?isAvailable=true'; // Only fetch available fields
-    if (sportId) {
-      url += `&sportId=${sportId}`;
-    }
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Failed to fetch fields');
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching fields:', error);
-    return [];
-  }
-};
-
-import { useSearchParams } from 'next/navigation';
-
 export default function BookingPage() {
   const searchParams = useSearchParams();
+
+  // Demo Data Hooks
+  const { sports: demoSports, loading: loadingSports } = useSportsDemo();
+  const { fields: demoFields, loading: loadingFields } = useFieldsDemo();
+  const { createBooking, checkAvailability, loading: loadingBookings } = useBookingsDemo();
+
   const [sportsData, setSportsData] = useState<Record<string, { name: string; icon: any; fields: Array<{ id: string; name: string; price: number }> }>>({});
-  const [sportsList, setSportsList] = useState<any[]>([]);
-  const [fieldsList, setFieldsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [formData, setFormData] = useState({
     customer_name: '',
     whatsapp_number: '',
@@ -143,30 +46,28 @@ export default function BookingPage() {
   const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
-  // Load sports and fields data on component mount
+  // Load sports and fields data from hooks
   useEffect(() => {
-    const loadSportsAndFields = async () => {
+    if (loadingSports || loadingFields) return;
+
+    const loadSportsAndFields = () => {
       setLoading(true);
       try {
-        // Fetch available sports
-        const sports = await getSports();
-        setSportsList(sports);
-
-        // Fetch all available fields
-        const fields = await getFields();
-        setFieldsList(fields);
+        // Filter available sports and fields from demo data
+        const activeSports = demoSports.filter(s => s.is_available === 1);
+        const activeFields = demoFields.filter(f => f.is_available === 1);
 
         // Transform sports data for use in the form
         const transformedSportsData: Record<string, { name: string; icon: any; fields: Array<{ id: string; name: string; price: number }> }> = {};
-        
-        sports.forEach((sport: any) => {
+
+        activeSports.forEach((sport) => {
           // Get fields that belong to this sport
-          const sportFields = fields
-            .filter((field: any) => field.sport_id === sport.id)
-            .map((field: any) => ({
+          const sportFields = activeFields
+            .filter((field) => field.sport_id === sport.id)
+            .map((field) => ({
               id: String(field.id), // Ensure ID is string for select value
               name: field.field_name,
-              price: parseFloat(field.price_per_hour)
+              price: field.price_per_hour
             }));
 
           transformedSportsData[sport.sport_type] = {
@@ -183,17 +84,17 @@ export default function BookingPage() {
         const fieldParam = searchParams.get('field');
 
         if (sportParam && transformedSportsData[sportParam]) {
-            setSelectedSport(sportParam);
-            setFormData(prev => ({ ...prev, sport: sportParam }));
-            
-            if (fieldParam) {
-                // Check if field exists in the selected sport
-                const fieldExists = transformedSportsData[sportParam].fields.some(f => f.id === fieldParam);
-                if (fieldExists) {
-                    setSelectedField(fieldParam);
-                    setFormData(prev => ({ ...prev, sport: sportParam, field: fieldParam }));
-                }
+          setSelectedSport(sportParam);
+          setFormData(prev => ({ ...prev, sport: sportParam }));
+
+          if (fieldParam) {
+            // Check if field exists in the selected sport
+            const fieldExists = transformedSportsData[sportParam].fields.some(f => f.id === fieldParam);
+            if (fieldExists) {
+              setSelectedField(fieldParam);
+              setFormData(prev => ({ ...prev, sport: sportParam, field: fieldParam }));
             }
+          }
         }
       } catch (error) {
         console.error('Error loading sports and fields:', error);
@@ -203,10 +104,10 @@ export default function BookingPage() {
     };
 
     loadSportsAndFields();
-  }, [searchParams]);
+  }, [searchParams, demoSports, demoFields, loadingSports, loadingFields]);
 
 
-  const handleSportChange = async (sport: string) => {
+  const handleSportChange = (sport: string) => {
     setSelectedSport(sport);
     setSelectedField('');
     setFormData({ ...formData, sport, field: '' });
@@ -227,9 +128,10 @@ export default function BookingPage() {
     setSelectedTimes([]);
   };
 
-  const handleCheckAvailability = async () => {
+  const handleCheckAvailability = () => {
     if (formData.sport && formData.field && formData.date) {
-      const booked = await getBookedSlots(formData.field, formData.date);
+      // Use hook to check availability
+      const booked = checkAvailability(Number(formData.field), formData.date);
       setBookedSlots(booked);
       setShowTimeSlots(true);
       setSelectedTimes([]);
@@ -238,7 +140,7 @@ export default function BookingPage() {
 
   const handleTimeSlotClick = (time: string) => {
     if (bookedSlots.includes(time)) return;
-    
+
     if (selectedTimes.includes(time)) {
       setSelectedTimes(selectedTimes.filter(t => t !== time));
     } else {
@@ -278,34 +180,27 @@ export default function BookingPage() {
       alert('Field tidak ditemukan');
       return;
     }
-    
+
     const totalPrice = field.price * selectedTimes.length;
-    
+
     try {
-      // Prepare booking data
-      const bookingData = {
-        customer_name: formData.customer_name,
-        customer_phone: formData.whatsapp_number,
-        field_id: formData.field,
+      // Create booking via hook
+      const result = createBooking({
+        field_id: Number(formData.field),
         field_name: field.name,
         booking_date: formData.date,
         time_slots: selectedTimes,
-        total_price: totalPrice
-      };
-
-      // Send booking request to API
-      const response = await fetch('/api/booking', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bookingData),
+        total_price: totalPrice,
+        customer_name: formData.customer_name,
+        customer_phone: formData.whatsapp_number,
+        customer_email: '', // Optional
+        booking_status: 'pending',
+        payment_status: 'pending'
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        alert(`Booking berhasil!\n\nDetail:\n- Lapangan: ${field.name}\n- Tanggal: ${formData.date}\n- Jam: ${selectedTimes.sort().join(', ')}\n- Total: ${formatPrice(totalPrice)}\n\nBooking ID: ${result.id}\n\nSilakan lanjutkan ke pembayaran.`);
-        
+      if (result.success) {
+        alert(`Booking berhasil!\n\nDetail:\n- Lapangan: ${field.name}\n- Tanggal: ${formData.date}\n- Jam: ${selectedTimes.sort().join(', ')}\n- Total: ${formatPrice(totalPrice)}\n\nBooking ID: ${result.data?.id}\n\nSilakan lanjutkan ke pembayaran.`);
+
         // Reset form after successful booking
         setFormData({ customer_name: '', whatsapp_number: '', sport: '', field: '', date: '' });
         setSelectedSport('');
@@ -314,8 +209,7 @@ export default function BookingPage() {
         setSelectedTimes([]);
         setBookedSlots([]);
       } else {
-        const errorData = await response.json();
-        alert(`Booking gagal: ${errorData.error}`);
+        alert(`Booking gagal: ${result.error}`);
       }
     } catch (error) {
       console.error('Booking error:', error);
@@ -343,26 +237,6 @@ export default function BookingPage() {
 
   return (
     <div className="min-h-screen bg-[#333333]">
-      {/* Header */}
-      {/* <div className="bg-[#404040] shadow-sm border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 transition-colors">
-              <ArrowLeft className="h-5 w-5" />
-              <span className="font-medium">Kembali ke Home</span>
-            </Link>
-            <div className="flex items-center space-x-2">
-              <div className="bg-gradient-to-r from-blue-600 to-red-600 rounded-xl p-2">
-                <Calendar className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold text-white tracking-tight">
-                SportArena
-              </span>
-            </div>
-          </div>
-        </div>
-      </div> */}
-
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
@@ -503,12 +377,12 @@ export default function BookingPage() {
                   <Clock className="h-5 w-5 text-blue-500" />
                   <span>Pilih Jam (Klik untuk memilih/membatalkan)</span>
                 </div>
-                
+
                 <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
                   {timeSlots.map((time) => {
                     const isBooked = bookedSlots.includes(time);
                     const isSelected = selectedTimes.includes(time);
-                    
+
                     return (
                       <button
                         key={time}
@@ -516,11 +390,11 @@ export default function BookingPage() {
                         disabled={isBooked}
                         className={`
                           py-3 px-4 rounded-2xl font-semibold transition-all
-                          ${isBooked 
-                            ? 'bg-[#262626] text-gray-600 cursor-not-allowed border border-white/5' 
+                          ${isBooked
+                            ? 'bg-[#262626] text-gray-600 cursor-not-allowed border border-white/5'
                             : isSelected
-                            ? 'bg-gradient-to-r from-blue-600 to-red-600 text-white shadow-lg scale-105'
-                            : 'bg-[#333333] text-gray-300 hover:bg-white/10 hover:text-white hover:scale-105 border border-white/10'
+                              ? 'bg-gradient-to-r from-blue-600 to-red-600 text-white shadow-lg scale-105'
+                              : 'bg-[#333333] text-gray-300 hover:bg-white/10 hover:text-white hover:scale-105 border border-white/10'
                           }
                         `}
                       >
@@ -583,11 +457,10 @@ export default function BookingPage() {
                   <button
                     onClick={handleBooking}
                     disabled={selectedTimes.length === 0}
-                    className={`px-12 py-4 rounded-2xl font-semibold text-lg transition-all shadow-xl ${
-                      selectedTimes.length > 0
-                        ? 'bg-gradient-to-r from-blue-600 to-red-600 text-white hover:scale-105'
-                        : 'bg-[#262626] text-gray-500 cursor-not-allowed border border-white/5'
-                    }`}
+                    className={`px-12 py-4 rounded-2xl font-semibold text-lg transition-all shadow-xl ${selectedTimes.length > 0
+                      ? 'bg-gradient-to-r from-blue-600 to-red-600 text-white hover:scale-105'
+                      : 'bg-[#262626] text-gray-500 cursor-not-allowed border border-white/5'
+                      }`}
                   >
                     Konfirmasi Booking ({selectedTimes.length} jam)
                   </button>

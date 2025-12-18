@@ -1,30 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getPendingBookings } from '@/lib/demoStore';
+
+/**
+ * DEMO MODE: Pending Bookings API
+ * 
+ * - GET: Reads from localStorage
+ */
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  const search = request.nextUrl.searchParams.get('q');
-
-  let query = supabase
-    .from('bookings')
-    .select('*')
-    .eq('payment_status', 'pending');
-
-  if (search) {
-    query = query.or(`customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%,field_name.ilike.%${search}%`);
-  }
-
   try {
-    const { data, error } = await query;
+    const search = request.nextUrl.searchParams.get('q');
 
-    if (error) {
-      console.error('Error fetching pending bookings:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    // DEMO MODE: Read from localStorage
+    const pendingBookings = getPendingBookings(search || undefined);
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: pendingBookings });
   } catch (error) {
-     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error fetching pending bookings:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

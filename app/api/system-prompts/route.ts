@@ -1,49 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import {
+  getSystemPrompts,
+  createSystemPrompt,
+} from '@/lib/demoStore';
 
-// Database connection
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+/**
+ * DEMO MODE: System Prompts API
+ * 
+ * - GET: Reads from localStorage
+ * - POST: Writes to localStorage ONLY (no Supabase mutation)
+ */
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const activeOnly = searchParams.get('active_only');
 
-    let query = supabase
-      .from('system_prompts')
-      .select(`
-        id,
-        name,
-        prompt_content,
-        is_active,
-        created_at,
-        updated_at,
-        version,
-        description,
-        created_by (username, full_name)
-      `)
-      .order('created_at', { ascending: false });
-
-    if (activeOnly === 'true') {
-      query = query.eq('is_active', true).limit(1);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      throw error;
-    }
+    // DEMO MODE: Read from localStorage
+    const prompts = getSystemPrompts(activeOnly === 'true');
 
     return NextResponse.json({
       success: true,
-      data: data
+      data: prompts
     });
   } catch (error) {
     console.error('Error fetching system prompts:', error);
@@ -73,28 +53,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new system prompt
-    const { data, error } = await supabase
-      .from('system_prompts')
-      .insert([
-        {
-          name,
-          prompt_content,
-          description: description || null,
-          created_by: created_by || null,
-          is_active: false // Default to inactive for new prompts
-        }
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
+    // DEMO MODE: Create in localStorage only
+    const newPrompt = createSystemPrompt({
+      name,
+      prompt_content,
+      description: description || null,
+      created_by: created_by || null,
+      is_active: false, // Default to inactive for new prompts
+    });
 
     return NextResponse.json({
       success: true,
-      data
+      data: newPrompt
     });
   } catch (error) {
     console.error('Error creating system prompt:', error);

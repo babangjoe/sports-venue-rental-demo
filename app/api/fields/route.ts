@@ -1,89 +1,60 @@
 import { NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import {
+  getFields,
+  getFieldImages,
+  getSportById,
+  createField,
+} from '@/lib/demoStore';
 
-// Ensure this route is not statically generated
+/**
+ * DEMO MODE: Fields API
+ * 
+ * - GET: Reads from localStorage
+ * - POST: Writes to localStorage ONLY (no Supabase mutation)
+ */
+
 export const dynamic = 'force-dynamic';
 
 // GET: Fetch fields (with optional filters)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Extract query parameters for filtering
     const isAvailable = searchParams.get('isAvailable');
     const sportId = searchParams.get('sportId');
     const fieldCode = searchParams.get('fieldCode');
 
-    // Fallback: Try to select field_images if relationship exists, otherwise select fields only
-    // Note: Supabase schema cache might take time to update. 
-    // For now, we will try to select without field_images join if the user reported error, 
-    // OR we can fix the query to use explicit join if possible, but PostgREST relies on FKs.
-    
-    // The error 'PGRST200' means the FK is not detected. 
-    // This happens if the migration wasn't run or schema cache is stale.
-    // We will try to fetch fields first, then fetch images separately to avoid joining error.
-    
-    let query = supabase
-      .from('fields')
-      .select('*, sports(sport_name, sport_type)')
-      .order('field_name', { ascending: true });
+    // DEMO MODE: Read from localStorage
+    const fields = getFields({
+      isAvailable: isAvailable !== null ? (isAvailable === 'true' || isAvailable === '1') : undefined,
+      sportId: sportId ? parseInt(sportId) : undefined,
+      fieldCode: fieldCode || undefined,
+    });
 
-    if (isAvailable !== null) {
-      const availableValue = isAvailable === 'true' || isAvailable === '1' ? 1 : 0;
-      query = query.eq('is_available', availableValue);
-    }
+    // Get images for these fields
+    const fieldImages = getFieldImages();
+    const imagesMap: Record<number, string[]> = {};
+    fieldImages.forEach((img) => {
+      if (!imagesMap[img.field_id]) {
+        imagesMap[img.field_id] = [];
+      }
+      imagesMap[img.field_id].push(img.url_image);
+    });
 
-    if (sportId) {
-      query = query.eq('sport_id', parseInt(sportId));
-    }
+    // Get sports data for joining
+    const result = fields.map((field) => {
+      const sport = getSportById(field.sport_id);
+      const images = imagesMap[field.id] || [];
+      const mainImage = images.length > 0 ? images[0] : field.url_image;
 
-    if (fieldCode) {
-      query = query.eq('field_code', fieldCode);
-    }
-
-    const { data: fields, error } = await query;
-
-    if (error) throw error;
-
-    // Manually fetch images for these fields
-    const fieldIds = fields.map((f: any) => f.id);
-    let imagesMap: Record<number, string[]> = {};
-    
-    if (fieldIds.length > 0) {
-        const { data: images, error: imagesError } = await supabase
-            .from('field_images')
-            .select('field_id, url_image')
-            .in('field_id', fieldIds);
-        
-        if (!imagesError && images) {
-            images.forEach((img: any) => {
-                if (!imagesMap[img.field_id]) {
-                    imagesMap[img.field_id] = [];
-                }
-                imagesMap[img.field_id].push(img.url_image);
-            });
-        } else {
-            // If table doesn't exist or error, just ignore images and proceed with field data only
-            // console.warn('Could not fetch field_images', imagesError);
-        }
-    }
-
-    const result = fields.map((field: any) => {
-        const sport = field.sports;
-        // Get images from separate fetch
-        const images = imagesMap[field.id] || [];
-        
-        // Use the first image from field_images if available, else use the url_image column
-        const mainImage = images.length > 0 ? images[0] : field.url_image;
-        
-        const { sports, ...fieldData } = field;
-        return {
-            ...fieldData,
-            sport_name: sport ? sport.sport_name : null,
-            sport_type: sport ? sport.sport_type : null,
-            url_image: mainImage, 
-            images: images 
-        };
+      return {
+        ...field,
+        sport_name: sport ? sport.sport_name : null,
+        sport_type: sport ? sport.sport_type : null,
+        url_image: mainImage,
+        images: images
+      };
     });
 
     return new Response(JSON.stringify(result), {
@@ -103,7 +74,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     const {
       field_name,
       field_code,
@@ -123,56 +94,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Insert field
-    const { data: newField, error: insertError } = await supabase
-      .from('fields')
-      .insert([{
-        field_name,
-        field_code,
-        sport_id,
-        price_per_hour,
-        description: description || null,
-        url_image: url_image || (images && images.length > 0 ? images[0] : null), // Use first image as fallback
-        is_available: is_available ? 1 : 0
-      }])
-      .select()
-      .single();
-
-    if (insertError) throw insertError;
-
-    // Insert images if provided
-    const imagesToInsert = [];
+    // Prepare images array
+    let finalImages: string[] = [];
     if (images && Array.isArray(images)) {
-        images.forEach((url: string) => {
-            if (url) imagesToInsert.push({ field_id: newField.id, url_image: url });
-        });
+      finalImages = images.filter((url: string) => url);
     } else if (url_image) {
-        // Fallback if only url_image provided
-        imagesToInsert.push({ field_id: newField.id, url_image: url_image });
+      finalImages = [url_image];
     }
 
-    if (imagesToInsert.length > 0) {
-        const { error: imagesError } = await supabase
-            .from('field_images')
-            .insert(imagesToInsert);
-        
-        // If error (e.g., table doesn't exist), log it but don't fail the whole request
-        // as the field itself was created successfully.
-        if (imagesError) console.error('Error inserting field images:', imagesError);
-    }
+    // DEMO MODE: Create in localStorage only
+    const newField = createField({
+      field_name,
+      field_code,
+      sport_id: parseInt(sport_id),
+      price_per_hour,
+      description: description || null,
+      url_image: finalImages.length > 0 ? finalImages[0] : null,
+      is_available: is_available ? 1 : 0,
+    }, finalImages);
 
-    // Return with joined sport info
-    const { data: sport } = await supabase
-      .from('sports')
-      .select('*')
-      .eq('id', sport_id)
-      .single();
+    // Get sport info for response
+    const sport = getSportById(parseInt(sport_id));
 
     const result = {
-        ...newField,
-        sport_name: sport ? sport.sport_name : null,
-        sport_type: sport ? sport.sport_type : null,
-        images: imagesToInsert.map(i => i.url_image)
+      ...newField,
+      sport_name: sport ? sport.sport_name : null,
+      sport_type: sport ? sport.sport_type : null,
+      images: finalImages
     };
 
     return new Response(JSON.stringify(result), {

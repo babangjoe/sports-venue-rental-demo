@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Target, Edit, Trash2, CheckCircle, XCircle, AlertCircle, Activity, Users, Zap, Dribbble, ShuffleIcon as Shuttlecock, Search, Filter } from 'lucide-react';
 import Link from 'next/link';
+import { useSportsDemo } from '@/hooks/useDemoData';
 
 // Data struktur untuk ikon olahraga
 const sportIcons = {
@@ -17,13 +18,13 @@ interface Sport {
   id: number;
   sport_name: string;
   sport_type: string;
-  description?: string;
-  is_available: boolean;
+  description?: string | null;
+  is_available: boolean | number;
 }
 
 export default function SportsManagementPage() {
+  const { sports: demoSports, loading, createSport, updateSport, deleteSport: deleteSportDemo } = useSportsDemo();
   const [sports, setSports] = useState<Sport[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingSport, setEditingSport] = useState<Sport | null>(null);
   const [formData, setFormData] = useState({
@@ -35,30 +36,14 @@ export default function SportsManagementPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Load sports data
+  // Sync sports from hook
   useEffect(() => {
-    const loadSports = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch('/api/sports?show_all=true');
-        if (response.ok) {
-          const result = await response.json();
-          // Handle both array (legacy/direct) and { data: [] } formats
-          const sportsData = Array.isArray(result) ? result : (result.data || []);
-          setSports(sportsData);
-        } else {
-          throw new Error('Failed to load sports');
-        }
-      } catch (error) {
-        console.error('Error loading sports:', error);
-        setMessage({ type: 'error', text: 'Gagal memuat data cabang olahraga' });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSports();
-  }, []);
+    const mapped = demoSports.map(s => ({
+      ...s,
+      is_available: s.is_available === 1
+    }));
+    setSports(mapped as Sport[]);
+  }, [demoSports]);
 
   // Toggle body scroll when modal is open
   useEffect(() => {
@@ -98,39 +83,26 @@ export default function SportsManagementPage() {
 
     try {
       const sportData = {
-        ...formData,
-        sport_type: formData.sport_type.toLowerCase().replace(/\s+/g, '-')
+        sport_name: formData.sport_name,
+        sport_type: formData.sport_type.toLowerCase().replace(/\s+/g, '-'),
+        description: formData.description || null,
+        is_available: formData.is_available ? 1 : 0
       };
 
-      const url = editingSport ? `/api/sports/${editingSport.id}` : '/api/sports';
-      const method = editingSport ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(sportData),
-      });
-
-      if (response.ok) {
-        const newSport = await response.json();
-        
-        if (editingSport) {
-          setSports(prev => prev.map(sport => 
-            sport.id === editingSport.id ? { ...sport, ...newSport } : sport
-          ));
+      // DEMO MODE: Use localStorage hooks directly
+      if (editingSport) {
+        const updated = updateSport(editingSport.id, sportData);
+        if (updated) {
           setMessage({ type: 'success', text: 'Cabang olahraga berhasil diperbarui!' });
         } else {
-          setSports(prev => [...prev, newSport]);
-          setMessage({ type: 'success', text: 'Cabang olahraga berhasil ditambahkan!' });
+          setMessage({ type: 'error', text: 'Gagal memperbarui cabang olahraga' });
         }
-        
-        resetForm();
       } else {
-        const errorData = await response.json();
-        setMessage({ type: 'error', text: errorData.error || 'Gagal menyimpan cabang olahraga' });
+        createSport(sportData);
+        setMessage({ type: 'success', text: 'Cabang olahraga berhasil ditambahkan!' });
       }
+
+      resetForm();
     } catch (error) {
       console.error('Error submitting form:', error);
       setMessage({ type: 'error', text: 'Terjadi kesalahan saat menyimpan' });
@@ -145,31 +117,23 @@ export default function SportsManagementPage() {
       sport_name: sport.sport_name,
       sport_type: sport.sport_type,
       description: sport.description || '',
-      is_available: sport.is_available
+      is_available: sport.is_available === true || sport.is_available === 1
     });
     setShowAddForm(true);
   };
 
-  const handleDelete = async (sportId: number) => {
+  const handleDelete = (sportId: number) => {
     if (!confirm('Apakah Anda yakin ingin menghapus cabang olahraga ini? Semua lapangan yang terkait juga akan terpengaruh.')) {
       return;
     }
 
-    try {
-      const response = await fetch(`/api/sports/${sportId}`, {
-        method: 'DELETE',
-      });
+    // DEMO MODE: Use localStorage hook directly
+    const result = deleteSportDemo(sportId);
 
-      if (response.ok) {
-        setSports(prev => prev.filter(sport => sport.id !== sportId));
-        setMessage({ type: 'success', text: 'Cabang olahraga berhasil dihapus!' });
-      } else {
-        const errorData = await response.json();
-        setMessage({ type: 'error', text: errorData.error || 'Gagal menghapus cabang olahraga' });
-      }
-    } catch (error) {
-      console.error('Error deleting sport:', error);
-      setMessage({ type: 'error', text: 'Terjadi kesalahan saat menghapus' });
+    if (result.success) {
+      setMessage({ type: 'success', text: 'Cabang olahraga berhasil dihapus!' });
+    } else {
+      setMessage({ type: 'error', text: result.error || 'Gagal menghapus cabang olahraga' });
     }
   };
 
@@ -219,11 +183,10 @@ export default function SportsManagementPage() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Message */}
         {message && (
-          <div className={`mb-6 p-4 rounded-lg border text-sm flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 ${
-            message.type === 'success' 
-              ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]' 
-              : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
-          }`}>
+          <div className={`mb-6 p-4 rounded-lg border text-sm flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success'
+            ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]'
+            : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
+            }`}>
             {message.type === 'success' ? (
               <CheckCircle className="h-4 w-4" />
             ) : (
@@ -242,9 +205,9 @@ export default function SportsManagementPage() {
         {/* Add/Edit Form Modal */}
         {showAddForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div 
-                className="absolute inset-0" 
-                onClick={resetForm}
+            <div
+              className="absolute inset-0"
+              onClick={resetForm}
             ></div>
             <div className="bg-[#1F2937] border border-[#374151] rounded-xl shadow-2xl w-full max-w-2xl relative flex flex-col max-h-[90vh] z-10 animate-in zoom-in-95 duration-200">
               {/* Modal Header */}
@@ -252,14 +215,14 @@ export default function SportsManagementPage() {
                 <h2 className="text-lg font-semibold text-white">
                   {editingSport ? 'Edit Cabang Olahraga' : 'Tambah Cabang Olahraga'}
                 </h2>
-                <button 
+                <button
                   onClick={resetForm}
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   <XCircle className="h-5 w-5" />
                 </button>
               </div>
-              
+
               {/* Modal Body */}
               <div className="p-6 overflow-y-auto">
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -335,7 +298,7 @@ export default function SportsManagementPage() {
 
                   {/* Form Actions */}
                   <div className="flex space-x-3 pt-4 border-t border-[#374151]">
-                     <button
+                    <button
                       type="button"
                       onClick={resetForm}
                       className="px-4 py-2 border border-[#374151] text-gray-300 rounded-lg text-sm font-medium hover:bg-[#374151] hover:text-white transition-colors"
@@ -345,11 +308,10 @@ export default function SportsManagementPage() {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all shadow-lg ${
-                        submitting
-                          ? 'bg-[#374151] text-gray-400 cursor-not-allowed'
-                          : 'bg-[#FF6C37] text-white hover:bg-[#FF5722] shadow-lg hover:shadow-xl'
-                      }`}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all shadow-lg ${submitting
+                        ? 'bg-[#374151] text-gray-400 cursor-not-allowed'
+                        : 'bg-[#FF6C37] text-white hover:bg-[#FF5722] shadow-lg hover:shadow-xl'
+                        }`}
                     >
                       {submitting ? 'Menyimpan...' : (editingSport ? 'Simpan Perubahan' : 'Buat Olahraga')}
                     </button>
@@ -366,7 +328,7 @@ export default function SportsManagementPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sports.map((sport) => {
                 const SportIcon = getSportIcon(sport.sport_type);
-                
+
                 return (
                   <div key={sport.id} className="group bg-[#1F2937] border border-[#374151] rounded-xl hover:border-[#FF6C37]/30 hover:shadow-[0_8px_32px_rgba(255,108,55,0.15)] transition-all duration-300 overflow-hidden">
                     <div className="p-6">
@@ -380,21 +342,20 @@ export default function SportsManagementPage() {
                             <p className="text-gray-400 text-xs font-mono mt-0.5">{sport.sport_type}</p>
                           </div>
                         </div>
-                        <div className={`px-2 py-1 rounded-lg text-xs uppercase tracking-wide font-semibold border ${
-                          sport.is_available 
-                            ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]' 
-                            : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
-                        }`}>
+                        <div className={`px-2 py-1 rounded-lg text-xs uppercase tracking-wide font-semibold border ${sport.is_available
+                          ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]'
+                          : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
+                          }`}>
                           {sport.is_available ? 'Aktif' : 'Nonaktif'}
                         </div>
                       </div>
-                      
+
                       {sport.description && (
                         <p className="text-gray-400 text-sm mb-5 line-clamp-2 h-10">
                           {sport.description}
                         </p>
                       )}
-                      
+
                       <div className="flex items-center justify-end space-x-3 pt-4 border-t border-[#374151]">
                         <button
                           onClick={() => handleEdit(sport)}
@@ -436,33 +397,33 @@ export default function SportsManagementPage() {
         {/* Statistics */}
         {sports.length > 0 && (
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-             <div className="bg-[#1F2937] border border-[#374151] p-5 rounded-xl flex items-center justify-between hover:border-[#FF6C37]/30 transition-all duration-300">
-                <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Total Olahraga</p>
-                  <p className="text-3xl font-bold text-white">{sports.length}</p>
-                </div>
-                <div className="bg-[#111827] p-3 rounded-lg border border-[#374151]">
-                  <Activity className="h-8 w-8 text-[#FF6C37]" />
-                </div>
-             </div>
-             <div className="bg-[#1F2937] border border-[#374151] p-5 rounded-xl flex items-center justify-between hover:border-[#34D399]/30 transition-all duration-300">
-                <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Aktif</p>
-                  <p className="text-3xl font-bold text-white">{sports.filter(sport => sport.is_available).length}</p>
-                </div>
-                <div className="bg-[#111827] p-3 rounded-lg border border-[#374151]">
-                  <CheckCircle className="h-8 w-8 text-[#34D399]" />
-                </div>
-             </div>
-             <div className="bg-[#1F2937] border border-[#374151] p-5 rounded-xl flex items-center justify-between hover:border-[#F87171]/30 transition-all duration-300">
-                <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Nonaktif</p>
-                  <p className="text-3xl font-bold text-white">{sports.filter(sport => !sport.is_available).length}</p>
-                </div>
-                <div className="bg-[#111827] p-3 rounded-lg border border-[#374151]">
-                  <XCircle className="h-8 w-8 text-[#F87171]" />
-                </div>
-             </div>
+            <div className="bg-[#1F2937] border border-[#374151] p-5 rounded-xl flex items-center justify-between hover:border-[#FF6C37]/30 transition-all duration-300">
+              <div>
+                <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Total Olahraga</p>
+                <p className="text-3xl font-bold text-white">{sports.length}</p>
+              </div>
+              <div className="bg-[#111827] p-3 rounded-lg border border-[#374151]">
+                <Activity className="h-8 w-8 text-[#FF6C37]" />
+              </div>
+            </div>
+            <div className="bg-[#1F2937] border border-[#374151] p-5 rounded-xl flex items-center justify-between hover:border-[#34D399]/30 transition-all duration-300">
+              <div>
+                <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Aktif</p>
+                <p className="text-3xl font-bold text-white">{sports.filter(sport => sport.is_available).length}</p>
+              </div>
+              <div className="bg-[#111827] p-3 rounded-lg border border-[#374151]">
+                <CheckCircle className="h-8 w-8 text-[#34D399]" />
+              </div>
+            </div>
+            <div className="bg-[#1F2937] border border-[#374151] p-5 rounded-xl flex items-center justify-between hover:border-[#F87171]/30 transition-all duration-300">
+              <div>
+                <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-1">Nonaktif</p>
+                <p className="text-3xl font-bold text-white">{sports.filter(sport => !sport.is_available).length}</p>
+              </div>
+              <div className="bg-[#111827] p-3 rounded-lg border border-[#374151]">
+                <XCircle className="h-8 w-8 text-[#F87171]" />
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -30,6 +30,11 @@ interface ChatRequest {
   conversationHistory: ChatMessage[];
   userRole?: string;
   userId?: string;
+  contextData?: {
+    sports: any[];
+    fields: any[];
+    bookings: any[];
+  };
 }
 
 // Fetch active system prompt from database
@@ -90,12 +95,7 @@ Respon dalam format JSON dengan struktur:
   }
 };
 
-interface ChatRequest {
-  message: string;
-  conversationHistory: ChatMessage[];
-  userRole?: string;
-  userId?: string;
-}
+
 
 // Natural Language Processing for intent recognition
 function recognizeIntent(message: string): {
@@ -116,7 +116,7 @@ function recognizeIntent(message: string): {
   confidence: number;
 } {
   const input = message.toLowerCase();
-  
+
   // Intent recognition with better patterns
   const patterns = {
     availability: {
@@ -189,28 +189,28 @@ function recognizeIntent(message: string): {
   // Calculate intent scores
   Object.entries(patterns).forEach(([intentType, patternData]) => {
     let score = 0;
-    
+
     // Keyword matching
     patternData.keywords.forEach(keyword => {
       if (input.includes(keyword)) {
         score += 0.3;
       }
     });
-    
+
     // Pattern matching
     patternData.patterns.forEach(pattern => {
       if (pattern.test(input)) {
         score += 0.5;
       }
     });
-    
+
     // Specific pattern matching with higher weights
     if (input.includes('besok')) score += 0.2;
     if (input.includes('hari ini')) score += 0.2;
     if (input.includes('malam') || input.includes('malem')) score += 0.3;
     if (input.includes('pagi')) score += 0.3;
     if (input.includes('sore')) score += 0.3;
-    
+
     patterns[intentType as keyof typeof patterns].score = score;
   });
 
@@ -226,7 +226,7 @@ function recognizeIntent(message: string): {
 
   // Entity extraction
   const entities: any = {};
-  
+
   // Sport extraction (ordered by priority - check longer phrases first)
   const sportKeywords = {
     'basketball': ['basketball', 'bola basket', 'basket'],
@@ -235,7 +235,7 @@ function recognizeIntent(message: string): {
     'mini-soccer': ['mini soccer', 'minisoccer', 'mini'],
     'futsal': ['futsal'] // remove 'bola' to avoid conflicts
   };
-  
+
   for (const [sport, keywords] of Object.entries(sportKeywords)) {
     if (keywords.some(kw => input.includes(kw))) {
       entities.sport = sport;
@@ -259,7 +259,7 @@ function recognizeIntent(message: string): {
   if (timeMatch) {
     entities.time = timeMatch[0];
   }
-  
+
   // Extract time range patterns (jam 5-6 sore, 5-6, etc.)
   const timeRangeMatch = input.match(/jam\s*(\d{1,2})(?:\s*[-–]\s*(\d{1,2}))?(?:\s*(sore|siang|malam|malem|pagi))?/i);
   if (timeRangeMatch) {
@@ -268,11 +268,11 @@ function recognizeIntent(message: string): {
     entities.timeRange = {
       start: `${startHour.toString().padStart(2, '0')}:00`,
       end: `${endHour.toString().padStart(2, '0')}:00`,
-      timePreference: timeRangeMatch[3]?.toLowerCase() === 'malem' ? 'evening' : 
-                      (timeRangeMatch[3]?.toLowerCase() || 'afternoon')
+      timePreference: timeRangeMatch[3]?.toLowerCase() === 'malem' ? 'evening' :
+        (timeRangeMatch[3]?.toLowerCase() || 'afternoon')
     };
   }
-  
+
   // Extract field name with patterns - be more specific
   const fieldPatterns = [
     /padel-a/i,
@@ -282,7 +282,7 @@ function recognizeIntent(message: string): {
     /futsal\s+field\s*(\w+)/i,
     /mini\s+soccer\s+field\s*(\w+)/i
   ];
-  
+
   for (const pattern of fieldPatterns) {
     const match = input.match(pattern);
     if (match) {
@@ -362,19 +362,19 @@ function recognizeIntent(message: string): {
       'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mei': 4, 'may': 5, 'jun': 6,
       'jul': 7, 'ags': 8, 'aug': 8, 'sep': 9, 'okt': 10, 'oct': 10, 'nov': 11, 'des': 11, 'dec': 11
     };
-    
+
     const dateMatch = input.match(/(?:tanggal\s*)?(\d{1,2})\s*(jan|feb|mar|apr|mei|may|jun|jul|ags|aug|sep|okt|oct|nov|des|dec)/i);
     if (dateMatch) {
       const day = parseInt(dateMatch[1]);
       const monthKey = dateMatch[2].toLowerCase();
-      
+
       if (months[monthKey] !== undefined) {
         // Fix the month - November is 11 (0-indexed)
         const monthNum = months[monthKey];
-        
+
         // Create date with local timezone
         const date = new Date(currentYear, monthNum, day);
-        
+
         // Format date as YYYY-MM-DD in local timezone
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -406,16 +406,16 @@ function getPromptGreeting(systemPrompt: string): string {
 // Extract section titles from system prompt
 function getPromptSectionTitle(systemPrompt: string | undefined, section: 'availability' | 'pricing' | 'booking' | 'transaction'): string | undefined {
   if (!systemPrompt) return undefined;
-  
+
   const sectionKeywords = {
     availability: ['ketersediaan', 'tersedia', 'jadwal', 'slot', 'availability', 'schedule'],
     pricing: ['harga', 'price', 'biaya', 'tarif', 'pricing', 'cost'],
     booking: ['booking', 'reservasi', 'pesan', 'order', 'book'],
     transaction: ['transaksi', 'laporan', 'revenue', 'financial', 'income']
   };
-  
+
   const keywords = sectionKeywords[section];
-  
+
   // Look for custom section titles in the system prompt
   for (const keyword of keywords) {
     const regex = new RegExp(`(?:${keyword})(?:.{0,50})`, 'i');
@@ -429,7 +429,7 @@ function getPromptSectionTitle(systemPrompt: string | undefined, section: 'avail
       }
     }
   }
-  
+
   return undefined;
 }
 
@@ -439,7 +439,8 @@ async function generateContextualResponse(
   userMessage: string,
   userRole?: string,
   systemPrompt?: string,
-  baseUrl?: string
+  baseUrl?: string,
+  contextData?: any
 ): Promise<{
   message: string;
   actions: Array<{
@@ -450,24 +451,33 @@ async function generateContextualResponse(
   }>;
 }> {
   const apiUrl = baseUrl ? new URL(baseUrl) : new URL('http://localhost:4000'); // Fallback URL
-  
+
   try {
     switch (intent.intent) {
       case 'availability': {
-        // Fetch real data
-        const [sportsResponse, fieldsResponse] = await Promise.all([
-          fetch(`${apiUrl.origin}/api/sports?isAvailable=true`, { cache: 'no-store' }),
-          fetch(`${apiUrl.origin}/api/fields?isAvailable=true`, { cache: 'no-store' })
-        ]);
-        
-        const sportsData = await sportsResponse.json();
-        const fieldsData = await fieldsResponse.json();
-        
+        // Fetch real data (use context if available, otherwise fetch from API)
+        let sportsData, fieldsData;
+
+        if (contextData?.sports && contextData?.fields) {
+          sportsData = contextData.sports;
+          fieldsData = contextData.fields;
+        } else {
+          const [sportsResponse, fieldsResponse] = await Promise.all([
+            fetch(`${apiUrl.origin}/api/sports?isAvailable=true`, { cache: 'no-store' }),
+            fetch(`${apiUrl.origin}/api/fields?isAvailable=true`, { cache: 'no-store' })
+          ]);
+          sportsData = await sportsResponse.json();
+          fieldsData = await fieldsResponse.json();
+        }
+        // Ensure data is array
+        if (!Array.isArray(sportsData)) sportsData = [];
+        if (!Array.isArray(fieldsData)) fieldsData = [];
+
         // Generate date range for 10 days
         const today = new Date();
         const dateRange = [];
         const dates = [];
-        
+
         for (let i = 0; i < 10; i++) {
           const date = new Date(today);
           date.setDate(today.getDate() + i);
@@ -479,15 +489,15 @@ async function generateContextualResponse(
             formatted: date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
           });
         }
-        
+
         // Response generation influenced by system prompt
         const greeting = systemPrompt ? getPromptGreeting(systemPrompt) : "Baik";
         let response = `${greeting}, saya cek ketersediaan lapangan untuk Anda${intent.entities.sport ? ` khususnya ${sportsData.find((s: any) => s.sport_type === intent.entities.sport)?.sport_name || intent.entities.sport}` : ''}.\n\n`;
-        
+
         // Generate time slots based on preference
         const allTimeSlots = ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
         let preferredSlots = allTimeSlots;
-        
+
         if (intent.entities.timePreference === 'morning') {
           preferredSlots = ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00'];
         } else if (intent.entities.timePreference === 'noon') {
@@ -500,7 +510,7 @@ async function generateContextualResponse(
           // Evening starts from 18:00 to max available
           preferredSlots = ['18:00', '19:00', '20:00', '21:00', '22:00'];
         }
-        
+
         // Group fields by sport
         const fieldsBySport: Record<string, any[]> = {};
         fieldsData.forEach((field: any) => {
@@ -510,20 +520,20 @@ async function generateContextualResponse(
           }
           fieldsBySport[sportCode].push(field);
         });
-        
+
         // Get the target sport
         const targetSportCode = intent.entities.sport || Object.keys(fieldsBySport)[0];
         const targetFields = fieldsBySport[targetSportCode] || [];
         const sportData = sportsData.find((sport: any) => sport.sport_type === targetSportCode);
         const sportName = sportData?.sport_name || targetSportCode;
-        
+
         // Build structured availability data
         const availabilityData = [];
         let hasAvailability = false;
-        
+
         // Check availability for specific date requested or show nearby dates
         let datesToCheck = dates;
-        
+
         // If user specified a specific date, only show that date
         if (intent.entities.date) {
           // Find the index of the requested date
@@ -539,31 +549,51 @@ async function generateContextualResponse(
           // No specific date requested, show first few dates
           datesToCheck = dates.slice(0, 3); // Show only 3 dates instead of 5
         }
-        
+
         for (let dateIndex = 0; dateIndex < datesToCheck.length; dateIndex++) {
           const dateObj = datesToCheck[dateIndex];
           const dateStr = dateObj.date;
-          
+
           const dateAvailability = {
             date: dateStr,
             dayName: dateObj.dayName,
             formatted: dateObj.formatted,
             fields: [] as any[]
           };
-          
+
           let dateHasAvailability = false;
-          
+
           // Check each field for this date
           for (const field of targetFields) {
             try {
-              // Check actual availability
-              const availabilityResponse = await fetch(`${apiUrl.origin}/api/booking/check-availability?fieldId=${field.id}&date=${dateStr}`, { cache: 'no-store' });
-              const availabilityData_response = await availabilityResponse.json();
-              const bookedSlots = availabilityData_response.bookedSlots || [];
-              
+              // Check availability
+              let bookedSlots: string[] = [];
+
+              if (contextData?.bookings) {
+                // Use provided bookings data for availability check
+                const relevantBookings = contextData.bookings.filter((b: any) =>
+                  Number(b.field_id) === Number(field.id) &&
+                  b.booking_date === dateStr &&
+                  b.booking_status !== 'cancelled'
+                );
+
+                // Extract slots
+                bookedSlots = [];
+                relevantBookings.forEach((b: any) => {
+                  if (Array.isArray(b.time_slots)) {
+                    bookedSlots.push(...b.time_slots);
+                  }
+                });
+              } else {
+                // Fallback to API check
+                const availabilityResponse = await fetch(`${apiUrl.origin}/api/booking/check-availability?fieldId=${field.id}&date=${dateStr}`, { cache: 'no-store' });
+                const availabilityData_response = await availabilityResponse.json();
+                bookedSlots = availabilityData_response.bookedSlots || [];
+              }
+
               // Get available slots
               const availableSlots = preferredSlots.filter(slot => !bookedSlots.includes(slot));
-              
+
               if (availableSlots.length > 0) {
                 dateHasAvailability = true;
                 hasAvailability = true;
@@ -589,7 +619,7 @@ async function generateContextualResponse(
               hasAvailability = true;
             }
           }
-          
+
           if (dateHasAvailability) {
             availabilityData.push(dateAvailability);
           }
@@ -602,9 +632,9 @@ async function generateContextualResponse(
         } else if (intent.entities.date) {
           specificDateInfo = ` untuk ${new Date(intent.entities.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
         }
-        
+
         response = `${getPromptGreeting(systemPrompt || '') || 'Baik'}, saya cek ketersediaan lapangan${intent.entities.sport ? ` ${sportName}` : ''}${specificDateInfo}.\n\n💡 *Klik pada lapangan dan waktu yang Anda inginkan untuk booking langsung!*`;
-        
+
         const actions: any[] = [{
           type: 'availability_cards',
           data: {
@@ -619,12 +649,12 @@ async function generateContextualResponse(
         if (!hasAvailability) {
           response = `\n❌ Tidak ada slot tersedia untuk 5 hari ke depan. Coba tanggal yang lebih jauh atau lapangan lain.`;
           actions.push({
-            type: 'redirect', 
+            type: 'redirect',
             label: 'Cari Tanggal Lain',
             url: '/#sports'
           });
         }
-        
+
         return {
           message: response,
           actions: actions
@@ -632,17 +662,23 @@ async function generateContextualResponse(
       }
 
       case 'pricing': {
-        const [sportsResponse, fieldsResponse] = await Promise.all([
-          fetch(`${apiUrl.origin}/api/sports?isAvailable=true`, { cache: 'no-store' }),
-          fetch(`${apiUrl.origin}/api/fields?isAvailable=true`, { cache: 'no-store' })
-        ]);
-        
-        const sportsData = await sportsResponse.json();
-        const fieldsData = await fieldsResponse.json();
-        
+        let sportsData, fieldsData;
+
+        if (contextData?.sports && contextData?.fields) {
+          sportsData = contextData.sports;
+          fieldsData = contextData.fields;
+        } else {
+          const [sportsResponse, fieldsResponse] = await Promise.all([
+            fetch(`${apiUrl.origin}/api/sports?isAvailable=true`, { cache: 'no-store' }),
+            fetch(`${apiUrl.origin}/api/fields?isAvailable=true`, { cache: 'no-store' })
+          ]);
+          sportsData = await sportsResponse.json();
+          fieldsData = await fieldsResponse.json();
+        }
+
         const pricingTitle = getPromptSectionTitle(systemPrompt, 'pricing') || 'Info Harga';
         let response = `${pricingTitle} SportArena${intent.entities.sport ? ` untuk ${sportsData.find((s: any) => s.sport_type === intent.entities.sport)?.sport_name || intent.entities.sport}` : ''}:\n\n`;
-        
+
         // Group and display pricing
         const pricingBySport: Record<string, { name: string; price: number }[]> = {};
         fieldsData.forEach((field: any) => {
@@ -660,11 +696,11 @@ async function generateContextualResponse(
             }
           }
         });
-        
+
         Object.entries(pricingBySport).forEach(([sportCode, fields]) => {
           const sportData = sportsData.find((sport: any) => sport.sport_type === sportCode);
           const sportName = sportData?.sport_name || sportCode;
-          
+
           if (fields.length > 0) {
             const avgPrice = fields.reduce((sum, f) => sum + f.price, 0) / fields.length;
             response += `🏆 ${sportName}\n`;
@@ -672,9 +708,9 @@ async function generateContextualResponse(
             response += `  📍 Lapangan: ${fields.map(f => f.name).join(', ')}\n\n`;
           }
         });
-        
+
         response += `Mau coba dulu? Saya bisa cari slot kosong untuk Anda!`;
-        
+
         return {
           message: response,
           actions: [
@@ -696,25 +732,25 @@ async function generateContextualResponse(
         // Build booking details from extracted entities
         const sportName = intent.entities.sport || '';
         const dateStr = intent.entities.date || '';
-        const timeStr = intent.entities.time? intent.entities.time : 
-                         intent.entities.timeRange?.start || '';
+        const timeStr = intent.entities.time ? intent.entities.time :
+          intent.entities.timeRange?.start || '';
         const fieldStr = intent.entities.fieldName || '';
-        
+
         const bookingGreeting = systemPrompt ? getPromptGreeting(systemPrompt) : 'Saya';
         let response = `${bookingGreeting} siap membantu booking lapangan Anda`;
-        
+
         if (sportName) response += ` untuk ${sportName}`;
         if (dateStr) response += ` pada ${dateStr}`;
         if (timeStr) response += ` jam ${timeStr}`;
         if (fieldStr) response += ` di lapangan ${fieldStr}`;
         response += `.\n\n`;
-        
+
         // Check required entities
         const missingEntities = [];
         if (!sportName) missingEntities.push('Cabang olahraga (Futsal, Basketball, Badminton, Padel, Mini Soccer)');
         if (!dateStr) missingEntities.push('Tanggal main');
         if (!timeStr) missingEntities.push('Preferensi waktu');
-        
+
         if (missingEntities.length > 0) {
           response += `Untuk proses booking, saya perlu tahu:\n`;
           missingEntities.forEach(item => response += `• ${item}\n`);
@@ -724,22 +760,22 @@ async function generateContextualResponse(
             actions: []
           };
         }
-        
+
         // Prepare booking URL with all extracted parameters
         const bookingParams = new URLSearchParams({
           sport: sportName,
           date: dateStr,
           timeSlot: timeStr
         });
-        
+
         if (fieldStr) {
           bookingParams.set('field', fieldStr);
         }
-        
+
         if (intent.entities.timeRange) {
           bookingParams.set('timeRange', `${intent.entities.timeRange.start}-${intent.entities.timeRange.end}`);
         }
-        
+
         return {
           message: response + `Saya akan arahkan Anda ke halaman booking dengan data yang sudah terisi. Silakan lengkapi data pelanjutnya.`,
           actions: [
@@ -783,9 +819,9 @@ async function generateContextualResponse(
           `Hai! Selamat datang di SportArena Assistant! 🏆\n\nSaya bisa bantu:\n• Cek ketersediaan lapangan\n• Informasi harga dan booking\n• Rekomendasi slot waktu terbaik\n• Bantu proses reservasi\n\nMau tanya apa dulu?`,
           `Halo! Dari SportArena Admin Assistant! 😊\n\nAda yang bisa saya bantu hari ini? Bisa:\n• Cari lapangan kosong\n• Tanya harga sewa\n• Langsung booking\n• Info cabang olahraga\n\nSilakan tanya dalam bahasaatural ya!`
         ];
-        
+
         const randomGreeting = greetingMessages[Math.floor(Math.random() * greetingMessages.length)];
-        
+
         return {
           message: randomGreeting,
           actions: [
@@ -800,14 +836,14 @@ async function generateContextualResponse(
     }
   } catch (error) {
     console.error('Error generating contextual response:', error);
-    
+
     // Fallback responses
     const fallbackResponses = [
       `Maaf, sedang ada kendala teknis. Coba lagi dalam beberapa saat ya!`,
       `Sedang loading data, silakan refresh dan coba lagi!`,
       `Oopps! Terjadi kesalahan. Bisa coba dengan pertanyaan lain?`
     ];
-    
+
     return {
       message: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)],
       actions: []
@@ -825,19 +861,19 @@ async function generateAIResponse(request: ChatRequest, baseUrl: string): Promis
     url?: string;
   }>;
 }> {
-  const { message, userRole } = request;
-  
+  const { message, userRole, contextData } = request;
+
   // Get active system prompt from database
   const systemPrompt = await getActiveSystemPrompt();
-  
+
   // Recognize intent and extract entities
   const intent = recognizeIntent(message);
-  
+
   // Generate contextual response using system prompt
   const usingFallback = systemPrompt.includes('Anda adalah asisten AI untuk SportArena');
   console.log(`🤖 AI Chat using ${usingFallback ? 'fallback' : 'database'} prompt`);
-  const response = await generateContextualResponse(intent, message, userRole, systemPrompt, baseUrl);
-  
+  const response = await generateContextualResponse(intent, message, userRole, systemPrompt, baseUrl, contextData);
+
   return response;
 }
 
@@ -845,10 +881,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as ChatRequest;
     const baseUrl = request.nextUrl.origin;
-    
+
     // Generate AI response
     const aiResponse = await generateAIResponse(body, baseUrl);
-    
+
     return NextResponse.json({
       success: true,
       response: aiResponse

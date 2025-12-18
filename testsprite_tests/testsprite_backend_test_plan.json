@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "user login with valid credentials",
+    "description": "Test the /api/auth/login endpoint with valid username and password to ensure successful login and JWT token generation with HTTP-only cookie."
+  },
+  {
+    "id": "TC002",
+    "title": "user login with missing credentials",
+    "description": "Test the /api/auth/login endpoint with missing username or password fields to verify the API returns a 400 error for missing credentials."
+  },
+  {
+    "id": "TC003",
+    "title": "user login with invalid credentials",
+    "description": "Test the /api/auth/login endpoint with incorrect username or password to confirm the API returns a 401 error for invalid credentials."
+  },
+  {
+    "id": "TC004",
+    "title": "create booking with valid data and no time slot conflict",
+    "description": "Test the POST /api/booking endpoint with valid booking data ensuring no time slot conflicts to verify successful booking creation with 201 response."
+  },
+  {
+    "id": "TC005",
+    "title": "create booking with missing required fields",
+    "description": "Test the POST /api/booking endpoint with missing required fields to ensure the API returns a 400 error indicating missing required fields."
+  },
+  {
+    "id": "TC006",
+    "title": "create booking with time slot conflict",
+    "description": "Test the POST /api/booking endpoint by attempting to book a time slot that conflicts with an existing booking to verify the API returns a 409 conflict error."
+  },
+  {
+    "id": "TC007",
+    "title": "get bookings with filters",
+    "description": "Test the GET /api/booking endpoint with query parameters like fieldId, date, and status to verify the API returns filtered booking lists correctly."
+  },
+  {
+    "id": "TC008",
+    "title": "create new field with valid data",
+    "description": "Test the POST /api/fields endpoint with valid field data including field name, code, sport id, and price per hour to verify successful field creation with 201 response."
+  },
+  {
+    "id": "TC009",
+    "title": "get all fields with availability filter",
+    "description": "Test the GET /api/fields endpoint with isAvailable and sportId query parameters to verify the API returns the correct list of fields filtered by availability and sport."
+  },
+  {
+    "id": "TC010",
+    "title": "create new sport with valid data",
+    "description": "Test the POST /api/sports endpoint with valid sport name and type to verify successful creation of a new sport category with 201 response."
+  }
+]

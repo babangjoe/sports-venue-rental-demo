@@ -7,25 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-
-interface Booking {
-  id: number;
-  field_name: string;
-  customer_name: string;
-  customer_phone: string;
-  booking_date: string;
-  time_slots: string[];
-  total_price: number;
-  payment_status: string;
-}
-
-interface Barang {
-  id: number;
-  nama_barang: string;
-  category: string;
-  harga: number;
-  stok: number;
-}
+import { useBookingsDemo, useBarangDemo, usePemasukanDemo } from '@/hooks/useDemoData';
+import type { Booking, Barang, Pemasukan } from '@/hooks/useDemoData';
 
 interface CartItem {
   type: 'booking' | 'barang';
@@ -47,79 +30,40 @@ interface PaymentResult {
 }
 
 export default function CashierPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [barangList, setBarangList] = useState<Barang[]>([]);
+  const { bookings, loadPendingBookings, loading: loadingBookings } = useBookingsDemo();
+  const { items: barangList, loadBarang, loading: loadingBarang } = useBarangDemo();
+  const { processPayment } = usePemasukanDemo();
   
   // Cart State
   const [cart, setCart] = useState<CartItem[]>([]);
   const [editingItem, setEditingItem] = useState<{index: number, quantity: number} | null>(null);
   
+  const [searchTerm, setSearchTerm] = useState('');
   const [cashGiven, setCashGiven] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [loadingBarang, setLoadingBarang] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState<PaymentResult | null>(null);
   const [activeTab, setActiveTab] = useState('booking');
 
-  // Search bookings
+  // Search bookings and barang
   useEffect(() => {
-    if (activeTab === 'booking') {
-      const searchBookings = async () => {
+    const timer = setTimeout(() => {
+      if (activeTab === 'booking') {
         setLoading(true);
-        try {
-          const params = new URLSearchParams();
-          if (searchTerm) params.append('q', searchTerm);
-          
-          const response = await fetch(`/api/bookings/pending?${params.toString()}`);
-          if (response.ok) {
-            const data = await response.json();
-            setBookings(data.data || []);
-          }
-        } catch (error) {
-          console.error('Error searching bookings:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
+        loadPendingBookings(searchTerm);
+        setLoading(false);
+      } else {
+        // Search Barang
+        let category = 'all';
+        if (activeTab === 'makanan') category = 'makanan';
+        if (activeTab === 'minuman') category = 'minuman';
+        
+        loadBarang({ category, search: searchTerm });
+      }
+    }, 300);
 
-      const debounceTimer = setTimeout(() => {
-        searchBookings();
-      }, 500);
-
-      return () => clearTimeout(debounceTimer);
-    } else {
-      // Search Barang
-      const searchBarang = async () => {
-        setLoadingBarang(true);
-        try {
-          const params = new URLSearchParams();
-          let category = 'all';
-          if (activeTab === 'makanan') category = 'makanan';
-          if (activeTab === 'minuman') category = 'minuman';
-          
-          params.append('category', category);
-          if (searchTerm) params.append('q', searchTerm);
-
-          const response = await fetch(`/api/barang?${params.toString()}`);
-          if (response.ok) {
-            const data = await response.json();
-            setBarangList(data || []);
-          }
-        } catch (error) {
-          console.error('Error searching barang:', error);
-        } finally {
-          setLoadingBarang(false);
-        }
-      };
-
-      const debounceTimer = setTimeout(() => {
-        searchBarang();
-      }, 500);
-
-      return () => clearTimeout(debounceTimer);
-    }
-  }, [searchTerm, activeTab]);
+    return () => clearTimeout(timer);
+  }, [searchTerm, activeTab, loadPendingBookings, loadBarang]);
 
   const addToCart = (item: any, type: 'booking' | 'barang') => {
     if (type === 'booking') {
@@ -245,24 +189,20 @@ export default function CashierPage() {
         }))
       };
 
-      const response = await fetch('/api/pemasukan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      // DEMO MODE: Use hook
+      const result = processPayment(payload);
 
-      const result = await response.json();
-
-      if (response.ok) {
-        setPaymentSuccess(result);
+      if (result.success) {
+        setPaymentSuccess({
+          success: true,
+          payment: result.payment
+        });
         toast.success('Pembayaran berhasil!');
         
-        // Remove processed bookings from list
-        if (bookingIds.length > 0) {
-          setBookings(prev => prev.filter(b => !bookingIds.includes(b.id)));
-        }
+        // Refresh booking list
+        loadPendingBookings(searchTerm);
       } else {
-        toast.error(result.error || 'Pembayaran gagal');
+        toast.error('Pembayaran gagal');
       }
     } catch (error) {
       console.error('Payment error:', error);

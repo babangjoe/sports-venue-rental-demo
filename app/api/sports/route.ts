@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import {
+  getSports,
+  createSport,
+} from '@/lib/demoStore';
 
-// Ensure this route is not statically generated
+/**
+ * DEMO MODE: Sports API
+ * 
+ * - GET: Reads from localStorage (demo data)
+ * - POST: Writes to localStorage ONLY (no Supabase mutation)
+ */
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
@@ -9,26 +18,11 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const showAll = searchParams.get('show_all') === 'true';
 
-    let query = supabase.from('sports').select('*');
+    const sports = getSports(showAll);
 
-    // If not showing all, only show available ones
-    if (!showAll) {
-      query = query.eq('is_available', 1);
-    }
-
-    // Add ordering
-    query = query.order('id', { ascending: true });
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Error fetching sports:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json(data);
+    return NextResponse.json(sports);
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Error fetching sports:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -51,26 +45,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error } = await supabase
-      .from('sports')
-      .insert([
-        {
-          sport_name,
-          sport_type,
-          description,
-          is_available: is_available ? 1 : 0,
-          updated_at: new Date().toISOString()
-        }
-      ])
-      .select()
-      .single();
+    // DEMO MODE: Create in localStorage only
+    const newSport = createSport({
+      sport_name,
+      sport_type,
+      description,
+      is_available: is_available ? 1 : 0,
+      updated_at: new Date().toISOString()
+    });
 
-    if (error) {
-      console.error('Error creating sport:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json(newSport, { status: 201 });
   } catch (error) {
     console.error('Error in POST /api/sports:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

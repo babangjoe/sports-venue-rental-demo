@@ -1,7 +1,21 @@
 import { NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import {
+  getFieldById,
+  getFieldImages,
+  getSportById,
+  updateField,
+  deleteField,
+  getBookings,
+} from '@/lib/demoStore';
 
-// Ensure this route is not statically generated
+/**
+ * DEMO MODE: Fields [id] API
+ * 
+ * - GET: Reads from localStorage
+ * - PUT: Updates localStorage ONLY
+ * - DELETE: Deletes from localStorage ONLY
+ */
+
 export const dynamic = 'force-dynamic';
 
 // PUT: Update a field
@@ -9,7 +23,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   try {
     const fieldId = parseInt(params.id);
     const body = await request.json();
-    
+
     const {
       field_name,
       field_code,
@@ -29,71 +43,39 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    // Update field
-    const { data: updatedField, error: updateError } = await supabase
-      .from('fields')
-      .update({
-        field_name,
-        field_code,
-        sport_id,
-        price_per_hour,
-        description: description || null,
-        url_image: url_image || (images && images.length > 0 ? images[0] : null),
-        is_available: is_available ? 1 : 0,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', fieldId)
-      .select()
-      .single();
+    // Prepare images array
+    let finalImages: string[] | undefined = undefined;
+    if (images && Array.isArray(images)) {
+      finalImages = images;
+    }
 
-    if (updateError || !updatedField) {
-       return new Response(
+    // DEMO MODE: Update in localStorage only
+    const updatedField = updateField(fieldId, {
+      field_name,
+      field_code,
+      sport_id: parseInt(sport_id),
+      price_per_hour,
+      description: description || null,
+      url_image: url_image || (finalImages && finalImages.length > 0 ? finalImages[0] : null),
+      is_available: is_available ? 1 : 0,
+    }, finalImages);
+
+    if (!updatedField) {
+      return new Response(
         JSON.stringify({ error: 'Field not found or update failed' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Handle images update (Replace logic)
-    if (images && Array.isArray(images)) {
-        // 1. Delete existing images
-        await supabase
-            .from('field_images')
-            .delete()
-            .eq('field_id', fieldId);
-        
-        // 2. Insert new images
-        const imagesToInsert = images.map((url: string) => ({
-            field_id: fieldId,
-            url_image: url
-        }));
-
-        if (imagesToInsert.length > 0) {
-            const { error: imagesError } = await supabase
-                .from('field_images')
-                .insert(imagesToInsert);
-            
-            if (imagesError) console.error('Error updating field images:', imagesError);
-        }
-    }
-
-    // Join with sports
-    const { data: sport } = await supabase
-        .from('sports')
-        .select('*')
-        .eq('id', sport_id)
-        .single();
-
-    // Get updated images
-    const { data: updatedImages } = await supabase
-        .from('field_images')
-        .select('url_image')
-        .eq('field_id', fieldId);
+    // Get sport and updated images for response
+    const sport = getSportById(parseInt(sport_id));
+    const updatedImages = getFieldImages(fieldId);
 
     const result = {
-        ...updatedField,
-        sport_name: sport ? sport.sport_name : null,
-        sport_type: sport ? sport.sport_type : null,
-        images: updatedImages ? updatedImages.map(i => i.url_image) : []
+      ...updatedField,
+      sport_name: sport ? sport.sport_name : null,
+      sport_type: sport ? sport.sport_type : null,
+      images: updatedImages.map(i => i.url_image)
     };
 
     return new Response(JSON.stringify(result), {
@@ -114,27 +96,20 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   try {
     const fieldId = parseInt(params.id);
 
-    // Check if field has any bookings
-    const { count, error: countError } = await supabase
-        .from('bookings')
-        .select('*', { count: 'exact', head: true })
-        .eq('field_id', fieldId);
-    
-    if (countError) throw countError;
+    // Check if field has any bookings (from localStorage)
+    const bookings = getBookings({ fieldId });
 
-    if (count && count > 0) {
+    if (bookings.length > 0) {
       return new Response(
         JSON.stringify({ error: 'Cannot delete field with existing bookings' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    const { error: deleteError } = await supabase
-        .from('fields')
-        .delete()
-        .eq('id', fieldId);
+    // DEMO MODE: Delete from localStorage only
+    const deleted = deleteField(fieldId);
 
-    if (deleteError) {
+    if (!deleted) {
       return new Response(
         JSON.stringify({ error: 'Field not found or delete failed' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
@@ -159,36 +134,27 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   try {
     const fieldId = parseInt(params.id);
 
-    const { data: field, error: fieldError } = await supabase
-        .from('fields')
-        .select('*, sports(sport_name, sport_type)')
-        .eq('id', fieldId)
-        .single();
+    // DEMO MODE: Read from localStorage
+    const field = getFieldById(fieldId);
 
-    if (fieldError || !field) {
+    if (!field) {
       return new Response(
         JSON.stringify({ error: 'Field not found' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Manually fetch images
-    const { data: imagesData } = await supabase
-        .from('field_images')
-        .select('url_image')
-        .eq('field_id', fieldId);
-    
-    const images = imagesData ? imagesData.map((img: any) => img.url_image) : [];
-
-    const { sports, ...fieldData } = field;
-    const sport = field.sports;
+    // Get sport and images
+    const sport = getSportById(field.sport_id);
+    const images = getFieldImages(fieldId);
+    const imageUrls = images.map(img => img.url_image);
 
     const result = {
-        ...fieldData,
-        sport_name: sport ? sport.sport_name : null,
-        sport_type: sport ? sport.sport_type : null,
-        images: images,
-        url_image: images.length > 0 ? images[0] : fieldData.url_image
+      ...field,
+      sport_name: sport ? sport.sport_name : null,
+      sport_type: sport ? sport.sport_type : null,
+      images: imageUrls,
+      url_image: imageUrls.length > 0 ? imageUrls[0] : field.url_image
     };
 
     return new Response(JSON.stringify(result), {

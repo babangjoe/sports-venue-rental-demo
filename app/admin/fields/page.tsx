@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Target, MapPin, DollarSign, Edit, Trash2, CheckCircle, XCircle, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+// import { supabase } from '@/lib/supabase'; // Disable Supabase direct access
+import { useFieldsDemo, useSportsDemo } from '@/hooks/useDemoData';
 
 // Data struktur untuk ikon olahraga
 const sportIcons = {
@@ -17,8 +18,8 @@ interface Sport {
   id: number;
   sport_name: string;
   sport_type: string;
-  description?: string;
-  is_available: boolean;
+  description?: string | null;
+  is_available: boolean | number;
 }
 
 interface Field {
@@ -27,15 +28,18 @@ interface Field {
   field_code: string;
   sport_id: number;
   price_per_hour: number;
-  description?: string;
-  url_image?: string;
+  description?: string | null;
+  url_image?: string | null;
   images?: string[];
-  is_available: boolean;
-  sport_name?: string;
-  sport_type?: string;
+  is_available: boolean | number;
+  sport_name?: string | null;
+  sport_type?: string | null;
 }
 
 export default function FieldManagementPage() {
+  const { fields: demoFields, createField, updateField, deleteField: deleteFieldDemo } = useFieldsDemo();
+  const { sports: demoSports } = useSportsDemo();
+
   const [sports, setSports] = useState<Sport[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,48 +52,40 @@ export default function FieldManagementPage() {
     sport_id: '',
     price_per_hour: '',
     description: '',
-    url_image: '', // For compatibility/single display
+    url_image: '',
     is_available: true
   });
-  
+
   // Image handling state
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
-  const [previewImage, setPreviewImage] = useState<string | null>(null); // For current preview
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [tempFile, setTempFile] = useState<File | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Load sports and fields data
+  // Sync data from hooks
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const [sportsResponse, fieldsResponse] = await Promise.all([
-          fetch('/api/sports'),
-          fetch('/api/fields')
-        ]);
+    // Map sports
+    const mappedSports = demoSports.map(s => ({
+      ...s,
+      is_available: s.is_available === 1
+    }));
+    setSports(mappedSports as Sport[]);
 
-        if (sportsResponse.ok && fieldsResponse.ok) {
-          const sportsData = await sportsResponse.json();
-          const fieldsData = await fieldsResponse.json();
-          setSports(sportsData);
-          setFields(fieldsData);
-        } else {
-          throw new Error('Failed to load data');
-        }
-      } catch (error) {
-        console.error('Error loading data:', error);
-        setMessage({ type: 'error', text: 'Gagal memuat data' });
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Map fields
+    const mappedFields = demoFields.map(f => ({
+      ...f,
+      is_available: f.is_available === 1
+    }));
+    setFields(mappedFields as Field[]);
 
-    loadData();
-  }, []);
+    // Only set loading false if we have data or context is initialized
+    // But since hooks manage their own loading state, we can just say:
+    setLoading(false);
+  }, [demoFields, demoSports]);
 
   // Toggle body scroll when modal is open
   useEffect(() => {
@@ -105,25 +101,25 @@ export default function FieldManagementPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    
+
     if (name === 'price_per_hour') {
-        // Allow only numbers
-        const numericValue = value.replace(/\D/g, '');
-        // Format with dots
-        const formattedValue = new Intl.NumberFormat('id-ID').format(Number(numericValue));
-        setFormData(prev => ({ ...prev, [name]: numericValue ? formattedValue : '' }));
+      // Allow only numbers
+      const numericValue = value.replace(/\D/g, '');
+      // Format with dots
+      const formattedValue = new Intl.NumberFormat('id-ID').format(Number(numericValue));
+      setFormData(prev => ({ ...prev, [name]: numericValue ? formattedValue : '' }));
     } else {
-        setFormData(prev => ({
-          ...prev,
-          [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-        }));
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      }));
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
+
       // Check total images limit
       if (existingImages.length + newImages.length >= 3) {
         setMessage({ type: 'error', text: 'Maksimal 3 gambar per lapangan' });
@@ -151,7 +147,7 @@ export default function FieldManagementPage() {
       setPreviewImage(objectUrl);
       setTempFile(file);
       setShowPreviewModal(true);
-      
+
       // Clear input value to allow re-selecting same file if cancelled
       e.target.value = '';
       setMessage(null);
@@ -207,31 +203,12 @@ export default function FieldManagementPage() {
     try {
       let uploadedUrls: string[] = [];
 
-      // Upload new images
+      // Demo: Mock Upload new images
       if (newImages.length > 0) {
         for (const file of newImages) {
-            // Generate unique filename
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-
-            // Upload to Supabase Storage
-            const { error: uploadError } = await supabase.storage
-                .from('sports-center-demo-images')
-                .upload(fileName, file);
-
-            if (uploadError) {
-                console.error('Upload error:', uploadError);
-                throw new Error('Gagal mengupload gambar ke Storage');
-            }
-
-            // Get Public URL
-            const { data: urlData } = supabase.storage
-                .from('sports-center-demo-images')
-                .getPublicUrl(fileName);
-
-            if (urlData && urlData.publicUrl) {
-                uploadedUrls.push(urlData.publicUrl);
-            }
+          // In demo mode, we'll just use a placeholder service or a fake internal URL
+          const mockUrl = `https://placehold.co/800x600?text=${encodeURIComponent(file.name)}`;
+          uploadedUrls.push(mockUrl);
         }
       }
 
@@ -239,42 +216,29 @@ export default function FieldManagementPage() {
       const finalImages = [...existingImages, ...uploadedUrls];
 
       const fieldData = {
-        ...formData,
+        field_name: formData.field_name,
+        field_code: formData.field_code,
         sport_id: parseInt(formData.sport_id),
-        price_per_hour: parseFloat(formData.price_per_hour.replace(/\./g, '')), // Remove dots before sending
-        url_image: finalImages.length > 0 ? finalImages[0] : '', // Main image
-        images: finalImages // All images
+        price_per_hour: parseFloat(formData.price_per_hour.replace(/\./g, '')),
+        description: formData.description || null,
+        url_image: finalImages.length > 0 ? finalImages[0] : null,
+        is_available: formData.is_available ? 1 : 0
       };
 
-      const url = editingField ? `/api/fields/${editingField.id}` : '/api/fields';
-      const method = editingField ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(fieldData),
-      });
-
-      if (response.ok) {
-        const newField = await response.json();
-        
-        if (editingField) {
-          setFields(prev => prev.map(field => 
-            field.id === editingField.id ? { ...field, ...newField } : field
-          ));
+      // DEMO MODE: Use localStorage hooks directly
+      if (editingField) {
+        const updated = updateField(editingField.id, fieldData, finalImages);
+        if (updated) {
           setMessage({ type: 'success', text: 'Lapangan berhasil diperbarui!' });
         } else {
-          setFields(prev => [...prev, newField]);
-          setMessage({ type: 'success', text: 'Lapangan berhasil ditambahkan!' });
+          setMessage({ type: 'error', text: 'Gagal memperbarui lapangan' });
         }
-        
-        resetForm();
       } else {
-        const errorData = await response.json();
-        setMessage({ type: 'error', text: errorData.error || 'Gagal menyimpan lapangan' });
+        createField(fieldData, finalImages);
+        setMessage({ type: 'success', text: 'Lapangan berhasil ditambahkan!' });
       }
+
+      resetForm();
     } catch (error: any) {
       console.error('Error submitting form:', error);
       setMessage({ type: 'error', text: error.message || 'Terjadi kesalahan saat menyimpan' });
@@ -292,41 +256,33 @@ export default function FieldManagementPage() {
       price_per_hour: new Intl.NumberFormat('id-ID').format(field.price_per_hour), // Format on load
       description: field.description || '',
       url_image: field.url_image || '',
-      is_available: field.is_available
+      is_available: field.is_available === true || field.is_available === 1
     });
-    
+
     // Load existing images (from field.images array if available, or url_image fallback)
     if (field.images && field.images.length > 0) {
-        setExistingImages(field.images);
+      setExistingImages(field.images);
     } else if (field.url_image) {
-        setExistingImages([field.url_image]);
+      setExistingImages([field.url_image]);
     } else {
-        setExistingImages([]);
+      setExistingImages([]);
     }
     setNewImages([]);
     setShowAddForm(true);
   };
 
-  const handleDelete = async (fieldId: number) => {
+  const handleDelete = (fieldId: number) => {
     if (!confirm('Apakah Anda yakin ingin menghapus lapangan ini?')) {
       return;
     }
 
-    try {
-      const response = await fetch(`/api/fields/${fieldId}`, {
-        method: 'DELETE',
-      });
+    // DEMO MODE: Use localStorage hook directly
+    const result = deleteFieldDemo(fieldId);
 
-      if (response.ok) {
-        setFields(prev => prev.filter(field => field.id !== fieldId));
-        setMessage({ type: 'success', text: 'Lapangan berhasil dihapus!' });
-      } else {
-        const errorData = await response.json();
-        setMessage({ type: 'error', text: errorData.error || 'Gagal menghapus lapangan' });
-      }
-    } catch (error) {
-      console.error('Error deleting field:', error);
-      setMessage({ type: 'error', text: 'Terjadi kesalahan saat menghapus' });
+    if (result.success) {
+      setMessage({ type: 'success', text: 'Lapangan berhasil dihapus!' });
+    } else {
+      setMessage({ type: 'error', text: result.error || 'Gagal menghapus lapangan' });
     }
   };
 
@@ -339,8 +295,8 @@ export default function FieldManagementPage() {
   };
 
   // Filter fields based on selected sport
-  const filteredFields = selectedSportFilter === 'all' 
-    ? fields 
+  const filteredFields = selectedSportFilter === 'all'
+    ? fields
     : fields.filter(field => field.sport_type === selectedSportFilter);
 
   const groupedFields = filteredFields.reduce((acc, field) => {
@@ -394,11 +350,10 @@ export default function FieldManagementPage() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Message */}
         {message && (
-          <div className={`mb-6 p-4 rounded-lg border text-sm flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 ${
-            message.type === 'success' 
-              ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]' 
-              : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
-          }`}>
+          <div className={`mb-6 p-4 rounded-lg border text-sm flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success'
+            ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]'
+            : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
+            }`}>
             {message.type === 'success' ? (
               <CheckCircle className="h-4 w-4" />
             ) : (
@@ -452,9 +407,9 @@ export default function FieldManagementPage() {
         {/* Add/Edit Form Modal */}
         {showAddForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div 
-                className="absolute inset-0" 
-                onClick={resetForm} // Clicking outside modal closes it (optional, remove if not wanted)
+            <div
+              className="absolute inset-0"
+              onClick={resetForm} // Clicking outside modal closes it (optional, remove if not wanted)
             ></div>
             <div className="bg-[#1F2937] border border-[#374151] rounded-xl shadow-2xl w-full max-w-3xl relative flex flex-col max-h-[90vh] z-10 animate-in zoom-in-95 duration-200">
               {/* Modal Header */}
@@ -462,14 +417,14 @@ export default function FieldManagementPage() {
                 <h2 className="text-lg font-semibold text-white">
                   {editingField ? 'Edit Lapangan' : 'Tambah Lapangan'}
                 </h2>
-                <button 
+                <button
                   onClick={resetForm}
                   className="text-gray-400 hover:text-white transition-colors"
                 >
                   <XCircle className="h-5 w-5" />
                 </button>
               </div>
-              
+
               {/* Modal Body - Scrollable */}
               <div className="p-6 overflow-y-auto">
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -553,76 +508,76 @@ export default function FieldManagementPage() {
                     <label htmlFor="description" className="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-3 block">
                       Gambar Lapangan ({existingImages.length + newImages.length}/3)
                     </label>
-                    
+
                     <div className="space-y-3">
-                        {existingImages.length + newImages.length < 3 && (
-                          <>
-                            <input
-                                type="file"
-                                id="file_upload"
-                                accept=".jpg,.jpeg,.png,.tif,.tiff"
-                                onChange={handleFileChange}
-                                className="hidden"
-                            />
-                            <label 
-                              htmlFor="file_upload"
-                              className="cursor-pointer inline-flex items-center px-4 py-2 bg-[#FF6C37]/10 text-[#FF6C37] rounded-lg hover:bg-[#FF6C37]/20 transition-colors text-sm font-semibold border border-[#FF6C37]/20"
-                            >
-                               <Plus className="h-4 w-4 mr-2" />
-                               Tambah Gambar
-                            </label>
-                          </>
-                        )}
+                      {existingImages.length + newImages.length < 3 && (
+                        <>
+                          <input
+                            type="file"
+                            id="file_upload"
+                            accept=".jpg,.jpeg,.png,.tif,.tiff"
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="file_upload"
+                            className="cursor-pointer inline-flex items-center px-4 py-2 bg-[#FF6C37]/10 text-[#FF6C37] rounded-lg hover:bg-[#FF6C37]/20 transition-colors text-sm font-semibold border border-[#FF6C37]/20"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Tambah Gambar
+                          </label>
+                        </>
+                      )}
 
-                        {!existingImages.length && !newImages.length && (
-                            <div className="text-xs text-gray-400 italic">Format: .jpg, .png, .tif (Max 2MB)</div>
-                        )}
+                      {!existingImages.length && !newImages.length && (
+                        <div className="text-xs text-gray-400 italic">Format: .jpg, .png, .tif (Max 2MB)</div>
+                      )}
                     </div>
-                    
-                    <div className="grid grid-cols-3 gap-4">
-                        {/* Existing Images List */}
-                        {existingImages.map((url, idx) => (
-                          <div key={`exist-${idx}`} className="relative group aspect-video bg-[#111827] rounded-lg overflow-hidden border border-[#374151]">
-                            <img src={url} alt={`Field ${idx}`} className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => removeExistingImage(idx)}
-                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </button>
-                            <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-gray-300 text-xs p-1 text-center truncate">
-                              Existing
-                            </div>
-                          </div>
-                        ))}
 
-                        {/* New Images List */}
-                        {newImages.map((file, idx) => (
-                          <div key={`new-${idx}`} className="relative group aspect-video bg-[#FF6C37]/10 rounded-lg overflow-hidden border border-[#FF6C37]/20">
-                            <div className="w-full h-full flex items-center justify-center text-[#FF6C37] font-bold text-xs truncate px-2">
-                                {file.name}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeNewImage(idx)}
-                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </button>
-                            <div className="absolute bottom-0 left-0 right-0 bg-[#FF6C37]/80 text-white text-xs p-1 text-center">
-                              New
-                            </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      {/* Existing Images List */}
+                      {existingImages.map((url, idx) => (
+                        <div key={`exist-${idx}`} className="relative group aspect-video bg-[#111827] rounded-lg overflow-hidden border border-[#374151]">
+                          <img src={url} alt={`Field ${idx}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeExistingImage(idx)}
+                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </button>
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-gray-300 text-xs p-1 text-center truncate">
+                            Existing
                           </div>
-                        ))}
+                        </div>
+                      ))}
+
+                      {/* New Images List */}
+                      {newImages.map((file, idx) => (
+                        <div key={`new-${idx}`} className="relative group aspect-video bg-[#FF6C37]/10 rounded-lg overflow-hidden border border-[#FF6C37]/20">
+                          <div className="w-full h-full flex items-center justify-center text-[#FF6C37] font-bold text-xs truncate px-2">
+                            {file.name}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeNewImage(idx)}
+                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </button>
+                          <div className="absolute bottom-0 left-0 right-0 bg-[#FF6C37]/80 text-white text-xs p-1 text-center">
+                            New
+                          </div>
+                        </div>
+                      ))}
                     </div>
 
                     {/* Empty State */}
                     {(existingImages.length === 0 && newImages.length === 0) && (
-                        <div className="flex flex-col items-center justify-center py-8 bg-[#111827] rounded-lg border-2 border-dashed border-[#374151] text-gray-500 mt-4">
-                            <ImageIcon className="h-8 w-8 mb-2" />
-                            <span className="text-sm">Belum ada gambar</span>
-                        </div>
+                      <div className="flex flex-col items-center justify-center py-8 bg-[#111827] rounded-lg border-2 border-dashed border-[#374151] text-gray-500 mt-4">
+                        <ImageIcon className="h-8 w-8 mb-2" />
+                        <span className="text-sm">Belum ada gambar</span>
+                      </div>
                     )}
                   </div>
 
@@ -659,7 +614,7 @@ export default function FieldManagementPage() {
 
                   {/* Form Actions */}
                   <div className="flex space-x-3 pt-4 border-t border-[#374151]">
-                     <button
+                    <button
                       type="button"
                       onClick={resetForm}
                       className="px-4 py-2 border border-[#374151] text-gray-300 rounded-lg text-sm font-medium hover:bg-[#374151] hover:text-white transition-colors"
@@ -669,11 +624,10 @@ export default function FieldManagementPage() {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all shadow-lg ${
-                        submitting
-                          ? 'bg-[#374151] text-gray-400 cursor-not-allowed'
-                          : 'bg-[#FF6C37] text-white hover:bg-[#FF5722] shadow-lg hover:shadow-xl'
-                      }`}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all shadow-lg ${submitting
+                        ? 'bg-[#374151] text-gray-400 cursor-not-allowed'
+                        : 'bg-[#FF6C37] text-white hover:bg-[#FF5722] shadow-lg hover:shadow-xl'
+                        }`}
                     >
                       {submitting ? 'Menyimpan...' : (editingField ? 'Simpan Perubahan' : 'Buat Lapangan')}
                     </button>
@@ -689,7 +643,7 @@ export default function FieldManagementPage() {
           {Object.entries(groupedFields).map(([sportType, sportFields]) => {
             const sport = sports.find(s => s.sport_type === sportType);
             const SportIcon = sportIcons[sportType as keyof typeof sportIcons] || Target;
-            
+
             return (
               <div key={sportType} className="bg-[#1F2937] border border-[#374151] rounded-xl shadow-xl overflow-hidden">
                 <div className="bg-[#FF6C37] p-3">
@@ -707,7 +661,7 @@ export default function FieldManagementPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {sportFields.map((field) => (
@@ -718,15 +672,14 @@ export default function FieldManagementPage() {
                               <h4 className="text-lg font-semibold text-white group-hover:text-[#FF6C37] transition-colors">{field.field_name}</h4>
                               <p className="text-gray-400 text-sm font-mono mt-0.5">{field.field_code}</p>
                             </div>
-                            <div className={`px-2 py-1 rounded-lg text-xs uppercase tracking-wide font-semibold border ${
-                              field.is_available 
-                                ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]' 
-                                : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
-                            }`}>
+                            <div className={`px-2 py-1 rounded-lg text-xs uppercase tracking-wide font-semibold border ${field.is_available
+                              ? 'bg-[#0D1F0F] border-[#1B3A1B] text-[#34D399]'
+                              : 'bg-[#1F0F0F] border-[#3A1A1A] text-[#F87171]'
+                              }`}>
                               {field.is_available ? 'Tersedia' : 'Tidak Tersedia'}
                             </div>
                           </div>
-                          
+
                           <div className="space-y-2 mb-5">
                             <div className="flex items-center space-x-2 text-gray-300">
                               <DollarSign className="h-4 w-4" />
@@ -738,7 +691,7 @@ export default function FieldManagementPage() {
                               </p>
                             )}
                           </div>
-                          
+
                           <div className="flex items-center justify-end space-x-3 pt-4 border-t border-[#374151]">
                             <button
                               onClick={() => handleEdit(field)}
@@ -806,36 +759,36 @@ export default function FieldManagementPage() {
           <div className="bg-[#1F2937] border border-[#374151] rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-4 border-b border-[#374151] flex justify-between items-center">
               <h3 className="text-lg font-semibold text-white">Preview Gambar</h3>
-              <button 
+              <button
                 onClick={cancelFileSelection}
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <XCircle className="h-5 w-5" />
               </button>
             </div>
-            
+
             <div className="p-6 bg-[#111827] flex-grow overflow-auto flex items-center justify-center">
-               <img 
-                 src={previewImage} 
-                 alt="Preview" 
-                 className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-md"
-               />
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-md"
+              />
             </div>
-            
+
             <div className="p-6 border-t border-[#374151] bg-[#1F2937] flex justify-end space-x-3">
-               <button
-                 onClick={cancelFileSelection}
-                 className="px-6 py-2 border border-[#374151] text-gray-300 rounded-lg font-semibold hover:bg-[#374151] transition-colors"
-               >
-                 Batal
-               </button>
-               <button
-                 onClick={confirmFileSelection}
-                 className="px-6 py-2 bg-[#FF6C37] text-white rounded-lg font-semibold hover:bg-[#FF5722] transition-colors flex items-center"
-               >
-                 <CheckCircle className="h-4 w-4 mr-2" />
-                 Pilih Gambar
-               </button>
+              <button
+                onClick={cancelFileSelection}
+                className="px-6 py-2 border border-[#374151] text-gray-300 rounded-lg font-semibold hover:bg-[#374151] transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmFileSelection}
+                className="px-6 py-2 bg-[#FF6C37] text-white rounded-lg font-semibold hover:bg-[#FF5722] transition-colors flex items-center"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Pilih Gambar
+              </button>
             </div>
           </div>
         </div>

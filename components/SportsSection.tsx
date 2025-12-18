@@ -10,25 +10,18 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Button } from './ui/button';
+import { useSportsDemo, useFieldsDemo } from '@/hooks/useDemoData';
 
-interface Sport {
-  id: number;
-  sport_name: string;
-  sport_type: string;
-  description: string;
-  is_available: number;
-}
+// Types are imported from hooks/useDemoData but existing local interfaces might differ slightly.
+// demoStore.Sport matches local Sport except is_available is number.
+// demoStore.Field matches local Field.
 
-interface Field {
-  id: number;
-  field_name: string;
-  field_code: string;
-  sport_id: number;
-  price_per_hour: number;
-  description: string;
-  url_image?: string;
+import type { Sport, Field } from '@/hooks/useDemoData';
+
+interface EnrichedField extends Field {
   images?: string[];
-  is_available: number;
+  sport_name?: string | null;
+  sport_type?: string | null;
 }
 
 const sportConfig: Record<string, { icon: any, color: string }> = {
@@ -44,24 +37,24 @@ const SportCard = ({ sport, onDetailClick }: { sport: Sport; onDetailClick: (spo
   const config = sportConfig[sport.sport_type] || { icon: Target, color: 'from-gray-500 to-slate-600' };
   const Icon = config.icon;
   const isAvailable = sport.is_available === 1;
-  
+
   return (
     <div className={`bg-[#404040] rounded-2xl p-8 shadow-lg border border-white/5 ${isAvailable ? 'hover:border-blue-500/50 hover:shadow-blue-500/20 cursor-pointer' : 'opacity-80'} transition-all duration-300 group flex flex-col justify-between h-full`}>
       <div>
         <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-r ${config.color} mb-6 ${isAvailable ? 'group-hover:scale-110' : ''} transition-transform shadow-lg`}>
           <Icon className="h-8 w-8 text-white" />
         </div>
-        
+
         <h3 className="text-2xl font-bold text-white mb-4">
           {sport.sport_name}
         </h3>
-        
+
         <p className="text-gray-300 leading-relaxed mb-6 flex-grow">
           {sport.description}
         </p>
       </div>
-      
-      <button 
+
+      <button
         onClick={() => isAvailable && onDetailClick(sport)}
         disabled={!isAvailable}
         className={`w-full py-3 px-6 rounded-xl font-semibold text-white bg-white/5 border border-white/10 transition-all inline-block text-center ${isAvailable ? 'hover:bg-white/10 group-hover:bg-blue-600 group-hover:border-blue-600' : 'cursor-not-allowed opacity-50'}`}
@@ -73,20 +66,15 @@ const SportCard = ({ sport, onDetailClick }: { sport: Sport; onDetailClick: (spo
 };
 
 // Helper to get dummy image based on sport type
-const getSportImage = (type: string, customUrl?: string) => {
+const getSportImage = (type: string, customUrl?: string | null) => {
   if (customUrl) {
-     // Check if it is a Google Drive link
-     if (customUrl.includes('drive.google.com')) {
-         // Try to convert to a viewable link if it's a standard share link
-         // Standard share link: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
-         // Direct view link (often works for img tags if public): https://drive.google.com/uc?export=view&id=FILE_ID
-         
-         const match = customUrl.match(/\/d\/(.+?)(\/|$)/);
-         if (match && match[1]) {
-             return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-         }
-     }
-     return customUrl;
+    if (customUrl.includes('drive.google.com')) {
+      const match = customUrl.match(/\/d\/(.+?)(\/|$)/);
+      if (match && match[1]) {
+        return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+      }
+    }
+    return customUrl;
   }
 
   switch (type) {
@@ -94,9 +82,9 @@ const getSportImage = (type: string, customUrl?: string) => {
     case 'mini-soccer': return 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=1000&auto=format&fit=crop';
     case 'basketball': return 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1000&auto=format&fit=crop';
     case 'badminton': return 'https://images.unsplash.com/photo-1626224583764-847890e0b3b9?q=80&w=1000&auto=format&fit=crop';
-    case 'padel': return 'https://images.unsplash.com/photo-1554068865-2484cd665469?q=80&w=1000&auto=format&fit=crop'; // Generic court/tennis
+    case 'padel': return 'https://images.unsplash.com/photo-1554068865-2484cd665469?q=80&w=1000&auto=format&fit=crop';
     case 'tenis': return 'https://images.unsplash.com/photo-1595435934249-fd66d1298819?q=80&w=1000&auto=format&fit=crop';
-    default: return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1000&auto=format&fit=crop'; // Generic gym
+    default: return 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1000&auto=format&fit=crop';
   }
 };
 
@@ -104,10 +92,8 @@ const getSportImage = (type: string, customUrl?: string) => {
 const FieldImageCarousel = ({ images, defaultImage, fieldName, isAvailable }: { images?: string[], defaultImage: string, fieldName: string, isAvailable: number }) => {
   const [api, setApi] = useState<any>();
   const [current, setCurrent] = useState(0);
-  const [count, setCount] = useState(0);
 
-  // Combine images: if images array exists and has length > 0, use it. Otherwise use defaultImage (from url_image or placeholder)
-  // We want to ensure at least one image is shown.
+  // Combine images: if images array exists and has length > 0, use it. Otherwise use defaultImage
   const imageList = images && images.length > 0 ? images : [defaultImage];
 
   useEffect(() => {
@@ -115,7 +101,6 @@ const FieldImageCarousel = ({ images, defaultImage, fieldName, isAvailable }: { 
       return;
     }
 
-    setCount(api.scrollSnapList().length);
     setCurrent(api.selectedScrollSnap() + 1);
 
     api.on("select", () => {
@@ -125,78 +110,72 @@ const FieldImageCarousel = ({ images, defaultImage, fieldName, isAvailable }: { 
 
   return (
     <div className="relative h-full w-full overflow-hidden group">
-        <Carousel setApi={setApi} className="w-full h-full">
-            <CarouselContent className="h-full ml-0">
-                {imageList.map((src, index) => (
-                    <CarouselItem key={index} className="pl-0 h-full">
-                        <img 
-                            src={getSportImage('', src)} 
-                            alt={`${fieldName} - ${index + 1}`}
-                            className="w-full h-full object-cover"
-                        />
-                    </CarouselItem>
-                ))}
-            </CarouselContent>
-            
-            {/* Only show controls if more than 1 image */}
-            {imageList.length > 1 && (
-                <>
-                    {/* Navigation Buttons - Centered Bottom Above Dots */}
-                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                        <CarouselPrevious className="static translate-y-0 h-8 w-8 border-none bg-black/30 text-white hover:bg-black/50 rounded-full" />
-                        <CarouselNext className="static translate-y-0 h-8 w-8 border-none bg-black/30 text-white hover:bg-black/50 rounded-full" />
-                    </div>
-                    
-                    {/* Dots Indicator for Images */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-1.5 z-10">
-                        {imageList.map((_, index) => (
-                            <div 
-                                key={index}
-                                className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${
-                                    current === index + 1 ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
-                                }`}
-                            />
-                        ))}
-                    </div>
-                </>
-            )}
-        </Carousel>
+      <Carousel setApi={setApi} className="w-full h-full">
+        <CarouselContent className="h-full ml-0">
+          {imageList.map((src, index) => (
+            <CarouselItem key={index} className="pl-0 h-full">
+              <img
+                src={getSportImage('', src)}
+                alt={`${fieldName} - ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </CarouselItem>
+          ))}
+        </CarouselContent>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-[#2b2b2b] via-transparent to-transparent opacity-90 pointer-events-none"></div>
-        
-        {/* Status Badge Overlay */}
-        <div className="absolute top-4 right-4 z-20">
-            <span className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-md ${
-                isAvailable 
-                ? 'bg-emerald-500/80 text-white border border-emerald-400/50' 
-                : 'bg-red-500/80 text-white border border-red-400/50'
-            }`}>
-                {isAvailable ? 'Aktif' : 'Tidak Aktif'}
-            </span>
-        </div>
+        {imageList.length > 1 && (
+          <>
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+              <CarouselPrevious className="static translate-y-0 h-8 w-8 border-none bg-black/30 text-white hover:bg-black/50 rounded-full" />
+              <CarouselNext className="static translate-y-0 h-8 w-8 border-none bg-black/30 text-white hover:bg-black/50 rounded-full" />
+            </div>
+
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-1.5 z-10">
+              {imageList.map((_, index) => (
+                <div
+                  key={index}
+                  className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${current === index + 1 ? 'w-4 bg-white' : 'w-1.5 bg-white/50'
+                    }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </Carousel>
+
+      <div className="absolute inset-0 bg-gradient-to-t from-[#2b2b2b] via-transparent to-transparent opacity-90 pointer-events-none"></div>
+
+      <div className="absolute top-4 right-4 z-20">
+        <span className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-md ${isAvailable === 1
+          ? 'bg-emerald-500/80 text-white border border-emerald-400/50'
+          : 'bg-red-500/80 text-white border border-red-400/50'
+          }`}>
+          {isAvailable === 1 ? 'Aktif' : 'Tidak Aktif'}
+        </span>
+      </div>
     </div>
   );
 };
 
 export default function SportsSection() {
-  const [sports, setSports] = useState<Sport[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Modal State
+  const { sports: demoSports, loading: loadingSports } = useSportsDemo();
+  const { fields: rawFields, loading: loadingFields } = useFieldsDemo();
+
+  // Cast fields to EnrichedField since the hook adds these properties
+  const demoFields = rawFields as unknown as EnrichedField[];
+
   const [selectedSport, setSelectedSport] = useState<Sport | null>(null);
-  const [fields, setFields] = useState<Field[]>([]);
-  const [loadingFields, setLoadingFields] = useState(false);
-  // Carousel API state to track current slide
+  const [fields, setFields] = useState<EnrichedField[]>([]);
+  const [loadingModal, setLoadingModal] = useState(false);
+
   const [api, setApi] = useState<any>();
   const [current, setCurrent] = useState(0);
-  const [count, setCount] = useState(0);
 
   useEffect(() => {
     if (!api) {
       return;
     }
 
-    setCount(api.scrollSnapList().length);
     setCurrent(api.selectedScrollSnap() + 1);
 
     api.on("select", () => {
@@ -204,53 +183,30 @@ export default function SportsSection() {
     });
   }, [api]);
 
-  useEffect(() => {
-    const fetchSports = async () => {
-      try {
-        const response = await fetch('/api/sports?show_all=true');
-        const result = await response.json();
-        if (Array.isArray(result)) {
-          setSports(result);
-        } else if (result.data) {
-          setSports(result.data);
-        }
-      } catch (error) {
-        console.error('Error fetching sports:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSports();
-  }, []);
-
-  const handleDetailClick = async (sport: Sport) => {
+  const handleDetailClick = (sport: Sport) => {
     setSelectedSport(sport);
-    setLoadingFields(true);
-    try {
-      const response = await fetch(`/api/fields?sportId=${sport.id}`);
-      const result = await response.json();
-      setFields(Array.isArray(result) ? result : []);
-    } catch (error) {
-      console.error('Error fetching fields:', error);
-      setFields([]);
-    } finally {
-      setLoadingFields(false);
-    }
-    // Disable scrolling on body
+    setLoadingModal(true);
+
+    // Filter fields from demoFields (already loaded in hook)
+    // Add small delay to simulate loading or just set immediate
+    setTimeout(() => {
+      const sportFields = demoFields.filter(f => f.sport_id === sport.id);
+      setFields(sportFields);
+      setLoadingModal(false);
+    }, 300);
+
     document.body.style.overflow = 'hidden';
   };
 
   const handleCloseDetail = () => {
     setSelectedSport(null);
     setFields([]);
-    // Re-enable scrolling
     document.body.style.overflow = 'auto';
   };
 
-  const isCarouselActive = sports.length > 1;
+  const isCarouselActive = demoSports.length > 1;
 
-  if (loading) {
+  if (loadingSports) {
     return (
       <section id="sports" className="py-20 bg-[#2b2b2b]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
@@ -282,7 +238,7 @@ export default function SportsSection() {
               className="w-full max-w-[95%]"
             >
               <CarouselContent>
-                {sports.map((sport) => (
+                {demoSports.map((sport) => (
                   <CarouselItem key={sport.id} className="md:basis-1/2 lg:basis-1/4 h-auto pl-6">
                     <SportCard sport={sport} onDetailClick={handleDetailClick} />
                   </CarouselItem>
@@ -298,7 +254,7 @@ export default function SportsSection() {
           </div>
         ) : (
           <div className="flex flex-wrap justify-center -mx-4">
-            {sports.map((sport) => (
+            {demoSports.map((sport) => (
               <div key={sport.id} className="w-full md:w-1/2 lg:w-1/4 px-4 mb-8">
                 <SportCard sport={sport} onDetailClick={handleDetailClick} />
               </div>
@@ -308,6 +264,7 @@ export default function SportsSection() {
 
         {/* Additional Features */}
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Same static content */}
           <div className="text-center group">
             <div className="bg-white/5 rounded-2xl p-6 mb-4 inline-block group-hover:bg-yellow-500/20 transition-colors">
               <div className="text-3xl">🏆</div>
@@ -334,24 +291,15 @@ export default function SportsSection() {
 
       {/* Detail Popup Modal */}
       {selectedSport && (
-        <div 
+        <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
           onClick={handleCloseDetail}
         >
-          <div 
+          <div
             className="bg-[#333] border border-white/10 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden relative shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header - REMOVE THIS as it is now redundant with the new layout, or simplify it */}
-            {/* The user wanted the image *above* the information, so the header in the modal might be better placed or removed. 
-                Actually, let's keep a minimal header or just the close button. 
-                The request said: "menampilkan gambar dari lapangan yang di maksud dengan size yang besar lalu dibawahnya baru informasi Nama Lapangan, Tarif dan Description"
-                So the sport info (Sport Name) is less critical on the slide itself, but maybe good to keep as a context.
-                I will remove the old header to maximize space for the image and info. 
-            */}
-            
-            {/* Close Button (Top Left) - Floating over image/content now */}
-            <button 
+            <button
               onClick={handleCloseDetail}
               className="absolute top-6 left-6 z-30 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors backdrop-blur-md border border-white/10"
               aria-label="Close"
@@ -359,18 +307,16 @@ export default function SportsSection() {
               <X className="h-6 w-6" />
             </button>
 
-
-            {/* Content */}
             <div className="flex-grow flex flex-col overflow-hidden">
-              {loadingFields ? (
-                 <div className="flex flex-col items-center justify-center py-12 space-y-4 h-full">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                    <p className="text-gray-400">Memuat data lapangan...</p>
-                 </div>
+              {loadingModal ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-4 h-full">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                  <p className="text-gray-400">Memuat data lapangan...</p>
+                </div>
               ) : fields.length > 0 ? (
                 <div className="flex-grow flex flex-col relative">
-                  <Carousel 
-                    setApi={setApi} 
+                  <Carousel
+                    setApi={setApi}
                     className="w-full h-full"
                     opts={{
                       loop: true,
@@ -380,50 +326,49 @@ export default function SportsSection() {
                       {fields.map((field) => (
                         <CarouselItem key={field.id} className="pl-0 h-full">
                           <div className="flex flex-col h-full bg-[#2b2b2b]">
-                            {/* Large Image Area - Increased height to 3/4 (approx 70vh) */}
+                            {/* Large Image Area */}
                             <div className="relative h-[65vh] w-full">
-                                <FieldImageCarousel 
-                                    images={field.images} 
-                                    defaultImage={getSportImage(selectedSport.sport_type, field.url_image)}
-                                    fieldName={field.field_name}
-                                    isAvailable={field.is_available}
-                                />
+                              <FieldImageCarousel
+                                images={field.images}
+                                defaultImage={getSportImage(selectedSport.sport_type, field.url_image)}
+                                fieldName={field.field_name}
+                                isAvailable={field.is_available}
+                              />
                             </div>
 
-                            {/* Info Area - Compacted to fit roughly 1/4 (approx 25vh) */}
+                            {/* Info Area */}
                             <div className="flex-grow px-8 py-6 flex flex-col justify-between bg-[#2b2b2b]">
                               <div className="flex justify-between items-center mb-2">
                                 <h2 className="text-2xl font-bold text-white mb-0">{field.field_name}</h2>
-                                
+
                                 <div className="text-right">
-                                   <span className="text-xl font-bold text-emerald-400">
-                                      {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(field.price_per_hour)} <span className="text-sm font-normal text-gray-400">(per jam)</span>
-                                   </span>
+                                  <span className="text-xl font-bold text-emerald-400">
+                                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(field.price_per_hour)} <span className="text-sm font-normal text-gray-400">(per jam)</span>
+                                  </span>
                                 </div>
                               </div>
 
                               <div className="mb-4">
-                                 <p className="text-gray-400 text-sm leading-snug line-clamp-2">
-                                   {field.description || "Lapangan dengan kualitas standar internasional, dilengkapi dengan penerangan LED dan lantai vinyl premium untuk kenyamanan bermain."}
-                                 </p>
+                                <p className="text-gray-400 text-sm leading-snug line-clamp-2">
+                                  {field.description || "Lapangan dengan kualitas standar internasional, dilengkapi dengan penerangan LED dan lantai vinyl premium untuk kenyamanan bermain."}
+                                </p>
                               </div>
 
                               <div className="mt-1">
-                                <Button 
-                                  className={`w-full h-10 text-sm font-bold rounded-lg shadow-md transition-all transform hover:scale-[1.01] ${
-                                    field.is_available 
-                                      ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-blue-500/20'
-                                      : 'bg-gray-600 text-gray-300 cursor-not-allowed hover:bg-gray-600'
-                                  }`}
+                                <Button
+                                  className={`w-full h-10 text-sm font-bold rounded-lg shadow-md transition-all transform hover:scale-[1.01] ${field.is_available === 1
+                                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-blue-500/20'
+                                    : 'bg-gray-600 text-gray-300 cursor-not-allowed hover:bg-gray-600'
+                                    }`}
                                   onClick={() => {
-                                     if (field.is_available) {
-                                        window.location.href = `/booking?sport=${selectedSport.sport_type}&field=${field.id}`;
-                                     } else {
-                                        alert('Lapangan yang Anda pilih tidak aktif (belum bisa digunakan), silakan pilih lapangan yang lain.');
-                                     }
+                                    if (field.is_available === 1) {
+                                      window.location.href = `/booking?sport=${selectedSport.sport_type}&field=${field.id}`;
+                                    } else {
+                                      alert('Lapangan yang Anda pilih tidak aktif (belum bisa digunakan), silakan pilih lapangan yang lain.');
+                                    }
                                   }}
                                 >
-                                  {field.is_available ? 'Book Now' : 'Tidak Tersedia'}
+                                  {field.is_available === 1 ? 'Book Now' : 'Tidak Tersedia'}
                                 </Button>
                               </div>
                             </div>
@@ -431,8 +376,7 @@ export default function SportsSection() {
                         </CarouselItem>
                       ))}
                     </CarouselContent>
-                    
-                    {/* Navigation Controls */}
+
                     {fields.length > 1 && (
                       <>
                         <div className="absolute top-1/2 -translate-y-1/2 left-4 z-20">
@@ -441,16 +385,14 @@ export default function SportsSection() {
                         <div className="absolute top-1/2 -translate-y-1/2 right-4 z-20">
                           <CarouselNext className="static translate-y-0 h-12 w-12 border-2 border-white/20 bg-black/40 text-white hover:bg-blue-600 hover:border-blue-600 hover:text-white transition-all" />
                         </div>
-                        
-                        {/* Dots Indicator */}
+
                         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-2 z-20">
                           {fields.map((_, index) => (
-                             <div 
-                               key={index}
-                               className={`h-2 rounded-full transition-all duration-300 ${
-                                 current === index + 1 ? 'w-8 bg-blue-500' : 'w-2 bg-white/30'
-                               }`}
-                             />
+                            <div
+                              key={index}
+                              className={`h-2 rounded-full transition-all duration-300 ${current === index + 1 ? 'w-8 bg-blue-500' : 'w-2 bg-white/30'
+                                }`}
+                            />
                           ))}
                         </div>
                       </>
@@ -469,4 +411,3 @@ export default function SportsSection() {
     </section>
   );
 }
-

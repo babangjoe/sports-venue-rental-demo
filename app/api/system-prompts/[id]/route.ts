@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import {
+  getSystemPromptById,
+  updateSystemPrompt,
+  deleteSystemPrompt,
+} from '@/lib/demoStore';
 
-// Database connection
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+/**
+ * DEMO MODE: System Prompts [id] API
+ * 
+ * - GET: Reads from localStorage
+ * - PUT: Updates localStorage ONLY
+ * - DELETE: Deletes from localStorage ONLY
+ */
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+export const dynamic = 'force-dynamic';
 
 // GET - Fetch single system prompt
 export async function GET(
@@ -17,27 +21,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { data, error } = await supabase
-      .from('system_prompts')
-      .select(`
-        id,
-        name,
-        prompt_content,
-        is_active,
-        created_at,
-        updated_at,
-        version,
-        description,
-        created_by (username, full_name)
-      `)
-      .eq('id', params.id)
-      .single();
+    const promptId = parseInt(params.id);
 
-    if (error) {
-      throw error;
-    }
+    // DEMO MODE: Read from localStorage
+    const prompt = getSystemPromptById(promptId);
 
-    if (!data) {
+    if (!prompt) {
       return NextResponse.json(
         {
           success: false,
@@ -49,7 +38,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data
+      data: prompt
     });
   } catch (error) {
     console.error('Error fetching system prompt:', error);
@@ -69,62 +58,34 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const promptId = parseInt(params.id);
     const body = await request.json();
     const { name, prompt_content, description, is_active } = body;
 
     // Prepare update data
-    const updateData: any = {
-      updated_at: new Date().toISOString()
-    };
+    const updateData: any = {};
 
     if (name !== undefined) updateData.name = name;
     if (prompt_content !== undefined) updateData.prompt_content = prompt_content;
     if (description !== undefined) updateData.description = description;
-    if (is_active !== undefined) {
-      updateData.is_active = is_active;
-      
-      // If setting this as active, deactivate all others
-      if (is_active) {
-        await supabase
-          .from('system_prompts')
-          .update({ is_active: false })
-          .neq('id', params.id);
-      }
-    }
+    if (is_active !== undefined) updateData.is_active = is_active;
 
-    // Increment version if content changed
-    if (prompt_content !== undefined) {
-      const { data: versionData, error: versionError } = await supabase.rpc('increment_version', { 
-        prompt_id: params.id 
-      });
-      if (versionError) {
-        console.error('Error incrementing version:', versionError);
-        // Continue with manual version increment
-        const { data: currentPrompt } = await supabase
-          .from('system_prompts')
-          .select('version')
-          .eq('id', params.id)
-          .single();
-        updateData.version = (currentPrompt?.version || 0) + 1;
-      } else {
-        updateData.version = versionData;
-      }
-    }
+    // DEMO MODE: Update in localStorage only
+    const updatedPrompt = updateSystemPrompt(promptId, updateData);
 
-    const { data, error } = await supabase
-      .from('system_prompts')
-      .update(updateData)
-      .eq('id', params.id)
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
+    if (!updatedPrompt) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'System prompt not found'
+        },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      data
+      data: updatedPrompt
     });
   } catch (error) {
     console.error('Error updating system prompt:', error);
@@ -144,8 +105,10 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const promptId = parseInt(params.id);
+
     // Check if it's the default prompt (id 1)
-    if (params.id === '1') {
+    if (promptId === 1) {
       return NextResponse.json(
         {
           success: false,
@@ -155,20 +118,22 @@ export async function DELETE(
       );
     }
 
-    const { data, error } = await supabase
-      .from('system_prompts')
-      .delete()
-      .eq('id', params.id)
-      .select()
-      .single();
+    // DEMO MODE: Delete from localStorage only
+    const deleted = deleteSystemPrompt(promptId);
 
-    if (error) {
-      throw error;
+    if (!deleted) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'System prompt not found'
+        },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      data
+      data: { id: promptId }
     });
   } catch (error) {
     console.error('Error deleting system prompt:', error);

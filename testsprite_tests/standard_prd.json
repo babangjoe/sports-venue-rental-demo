@@ -1,0 +1,442 @@
+{
+  "meta": {
+    "project": "Sport Arena Platform",
+    "date": "2025-12-05",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "Sport Arena is a comprehensive sports venue rental and management platform for multi-sport facilities in Tangerang Selatan, Indonesia. It caters to sports enthusiasts for easy online booking of courts, and provides venue operators with tools for booking management, payment processing, and business analytics.",
+  "core_goals": [
+    "Enable customers to book sports courts online with real-time availability and multiple time slot selection.",
+    "Provide venue staff and owners with administrative capabilities to manage sports categories, venue fields, and bookings effectively.",
+    "Offer detailed business insights and revenue tracking through an analytics dashboard for owners.",
+    "Support cashier operations including booking payment processing and food & beverage sales via a point-of-sale system.",
+    "Enhance customer experience using an AI assistant for booking help and general inquiries."
+  ],
+  "key_features": [
+    "Customer-facing landing page with sports showcase, statistics, events, testimonials, and WhatsApp integration.",
+    "Online booking system with sport selection, field and date picking, real-time slot availability, multi-slot time selection, booking summary, and customer info collection.",
+    "AI Assistant chatbot for conversational support related to bookings and venue info.",
+    "Administrative dashboard for owners featuring revenue overview, booking trends visualization, transaction management, and payment tracking.",
+    "Sports and venue field management with CRUD operations, image uploads, pricing configuration, and availability toggling.",
+    "Cashier point-of-sale interface supporting multi-tab management for bookings and food/beverage items, cart management, payment processing with validation, and invoice generation."
+  ],
+  "user_flow_summary": [
+    "Customer views the landing page, explores sports offerings, and accesses the booking page.",
+    "Customer selects a sport, chooses a specific field, picks a date, and selects one or more available time slots.",
+    "Customer provides personal details and submits the booking request, receiving a booking confirmation.",
+    "Admin or owner logs into the admin dashboard to manage sports categories, venues, and approve bookings.",
+    "Cashier accesses the POS system to process payments for bookings and F&B orders, updating booking statuses accordingly.",
+    "Owner reviews analytics and revenue reports on the dashboard for business insights.",
+    "Users can access the AI Assistant for support and booking inquiries at any time."
+  ],
+  "validation_criteria": [
+    "Bookings must prevent double-booking by enforcing time slot conflict detection via the API.",
+    "User authentication must securely generate and manage JWT tokens with HTTP-only cookies.",
+    "Administrative actions on sports and fields require proper role-based access permissions.",
+    "Payment processing in the cashier system must validate cash input and correctly calculate change before completing the transaction.",
+    "Revenue and booking data visualizations must accurately reflect database records and allow filtering by time period and sport type.",
+    "AI Assistant must handle booking-related queries and general venue information reliably through the chat API."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "TypeScript",
+      "Next.js 13.5",
+      "React 18",
+      "Supabase",
+      "Tailwind CSS",
+      "Radix UI",
+      "Recharts",
+      "JWT Authentication",
+      "bcryptjs"
+    ],
+    "features": [
+      {
+        "name": "Authentication API",
+        "description": "User login with JWT token generation and HTTP-only cookie session management",
+        "files": [
+          "app/api/auth/login/route.ts",
+          "app/api/auth/logout/route.ts",
+          "app/api/auth/me/route.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/auth/login": {
+              "post": {
+                "summary": "User login",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "username": {
+                            "type": "string"
+                          },
+                          "password": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "username",
+                          "password"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Login successful with user info"
+                  },
+                  "400": {
+                    "description": "Missing credentials"
+                  },
+                  "401": {
+                    "description": "Invalid credentials"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Bookings API",
+        "description": "Create, read, and manage sports field bookings with time slot conflict detection",
+        "files": [
+          "app/api/booking/route.ts",
+          "app/api/bookings/route.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/booking": {
+              "get": {
+                "summary": "Get bookings with optional filters",
+                "parameters": [
+                  {
+                    "name": "fieldId",
+                    "in": "query",
+                    "schema": {
+                      "type": "integer"
+                    }
+                  },
+                  {
+                    "name": "date",
+                    "in": "query",
+                    "schema": {
+                      "type": "string",
+                      "format": "date"
+                    }
+                  },
+                  {
+                    "name": "status",
+                    "in": "query",
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of bookings"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Create a new booking",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "field_id": {
+                            "type": "integer"
+                          },
+                          "field_name": {
+                            "type": "string"
+                          },
+                          "booking_date": {
+                            "type": "string",
+                            "format": "date"
+                          },
+                          "time_slots": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "total_price": {
+                            "type": "number"
+                          },
+                          "customer_name": {
+                            "type": "string"
+                          },
+                          "customer_phone": {
+                            "type": "string"
+                          },
+                          "customer_email": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "field_id",
+                          "field_name",
+                          "booking_date",
+                          "time_slots",
+                          "total_price"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "201": {
+                    "description": "Booking created"
+                  },
+                  "400": {
+                    "description": "Missing required fields"
+                  },
+                  "409": {
+                    "description": "Time slot conflict"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Fields API",
+        "description": "CRUD operations for sports fields with image management",
+        "files": [
+          "app/api/fields/route.ts",
+          "app/api/fields/[id]/route.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/fields": {
+              "get": {
+                "summary": "Get all fields",
+                "parameters": [
+                  {
+                    "name": "isAvailable",
+                    "in": "query",
+                    "schema": {
+                      "type": "boolean"
+                    }
+                  },
+                  {
+                    "name": "sportId",
+                    "in": "query",
+                    "schema": {
+                      "type": "integer"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of fields with sport info"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Create a new field",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "field_name": {
+                            "type": "string"
+                          },
+                          "field_code": {
+                            "type": "string"
+                          },
+                          "sport_id": {
+                            "type": "integer"
+                          },
+                          "price_per_hour": {
+                            "type": "number"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "url_image": {
+                            "type": "string"
+                          },
+                          "is_available": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "field_name",
+                          "field_code",
+                          "sport_id",
+                          "price_per_hour"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "201": {
+                    "description": "Field created"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Sports API",
+        "description": "CRUD operations for sport categories",
+        "files": [
+          "app/api/sports/route.ts",
+          "app/api/sports/[id]/route.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/sports": {
+              "get": {
+                "summary": "Get all sports",
+                "parameters": [
+                  {
+                    "name": "show_all",
+                    "in": "query",
+                    "schema": {
+                      "type": "boolean"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "List of sports"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Create a new sport",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "sport_name": {
+                            "type": "string"
+                          },
+                          "sport_type": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "is_available": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "sport_name",
+                          "sport_type"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "201": {
+                    "description": "Sport created"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Barang (Items) API",
+        "description": "Manage inventory items like equipment and accessories",
+        "files": [
+          "app/api/barang/route.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/barang": {
+              "get": {
+                "summary": "Get all inventory items",
+                "responses": {
+                  "200": {
+                    "description": "List of items"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Pemasukan (Revenue) API",
+        "description": "Track and manage revenue records",
+        "files": [
+          "app/api/pemasukan/route.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "paths": {
+            "/api/pemasukan": {
+              "get": {
+                "summary": "Get revenue records",
+                "responses": {
+                  "200": {
+                    "description": "List of revenue entries"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Admin Dashboard",
+        "description": "Administrative dashboard with booking management, revenue analytics, and field management",
+        "files": [
+          "app/admin/dashboard/page.tsx",
+          "app/admin/fields/page.tsx",
+          "app/admin/sports/page.tsx",
+          "app/admin/kasir/page.tsx"
+        ]
+      },
+      {
+        "name": "Public Booking Page",
+        "description": "Customer-facing booking interface for selecting fields and time slots",
+        "files": [
+          "app/booking/page.tsx",
+          "app/booking/[fieldCode]/page.tsx"
+        ]
+      },
+      {
+        "name": "Login Page",
+        "description": "User authentication page with form validation",
+        "files": [
+          "app/login/page.tsx"
+        ]
+      },
+      {
+        "name": "AI Assistant",
+        "description": "AI chat assistant for booking help and inquiries",
+        "files": [
+          "app/ai-assistant/page.tsx",
+          "app/api/ai-chat/route.ts"
+        ]
+      }
+    ]
+  }
+}

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, Send, Bot, User as UserIcon, Settings, Clock, Target, Calendar, DollarSign, BarChart3, ArrowRight, X, Check, CheckCircle, MapPin, Phone } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import { useSportsDemo, useFieldsDemo, useBookingsDemo } from '@/hooks/useDemoData';
 
 interface Message {
   id: string;
@@ -25,7 +26,7 @@ interface SystemPrompt {
   is_active: boolean;
   created_at: string;
   updated_at: string;
- CreatedBy?: {
+  CreatedBy?: {
     username: string;
     full_name: string;
   };
@@ -38,7 +39,12 @@ export default function AIAssistantPage() {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  
+
+  // Demo Data Hooks
+  const { sports } = useSportsDemo();
+  const { fields } = useFieldsDemo();
+  const { bookings } = useBookingsDemo();
+
   // Booking form state
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingForm, setBookingForm] = useState<{
@@ -68,7 +74,7 @@ export default function AIAssistantPage() {
   const [newPromptName, setNewPromptName] = useState('');
   const [showAddPrompt, setShowAddPrompt] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   // Create refs for input fields to maintain focus - move outside component
   const nameInputRef = useRef<HTMLInputElement>(null);
   const whatsappInputRef = useRef<HTMLInputElement>(null);
@@ -172,7 +178,7 @@ Respon dalam format JSON dengan struktur:
     try {
       // Simulate AI response (replace with actual API call)
       const response = await simulateAIResponse(inputMessage);
-      
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: response.message,
@@ -209,7 +215,12 @@ Respon dalam format JSON dengan struktur:
           message: userInput,
           conversationHistory: messages,
           userRole: user?.role,
-          userId: user?.id
+          userId: user?.id,
+          contextData: {
+            sports,
+            fields,
+            bookings
+          }
         })
       });
 
@@ -218,9 +229,9 @@ Respon dalam format JSON dengan struktur:
       }
 
       const data = await response.json();
-      
+
       console.log("response api/ai-chat: ", data)
-      
+
       if (data.success) {
         console.log("return success: ", data.response)
         return data.response;
@@ -229,14 +240,14 @@ Respon dalam format JSON dengan struktur:
       }
     } catch (error) {
       console.error('AI Response Error:', error);
-      
+
       // Fallback response
       const input = userInput.toLowerCase();
-      
+
       // Check for schedule/availability requests
       if (input.includes('jadwal') || input.includes('ketersediaan') || input.includes('tersedia')) {
         const isAfternoon = input.includes('sore') || input.includes('siang');
-        
+
         return {
           message: `Berikut jadwal lapangan yang ${isAfternoon ? 'di sore hari' : 'tersedia'} untuk 10 hari ke depan:\n\n🏀 Basketball Court A - Rp 150.000/jam\n  16:00, 17:00, 18:00, 19:00\n⚽ Futsal Field 1 - Rp 100.000/jam\n  16:00, 17:00, 20:00, 21:00\n🏸 Badminton Court 2 - Rp 80.000/jam\n  17:00, 18:00, 19:00\n\nPilih lapangan dan jam yang Anda inginkan, saya akan bantu proses bookingnya.`,
           actions: [
@@ -265,10 +276,10 @@ Respon dalam format JSON dengan struktur:
     try {
       const response = await fetch('/api/system-prompts');
       const result = await response.json();
-      
+
       if (result.success) {
         setSystemPrompts(result.data);
-        
+
         // Set selected prompt to active one
         const activePrompt = result.data.find((p: any) => p.is_active);
         if (activePrompt) {
@@ -277,7 +288,7 @@ Respon dalam format JSON dengan struktur:
       }
     } catch (error) {
       console.error('Error loading system prompts:', error);
-      
+
       // Fallback to default prompt if database not available
       const fallbackPrompts: SystemPrompt[] = [defaultPrompt];
       console.warn('Using fallback in-memory prompts - database not available. Please check database connection.');
@@ -302,7 +313,7 @@ Respon dalam format JSON dengan struktur:
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Update local state
         setSystemPrompts(prev => prev.map(p => p.id === prompt.id ? result.data : p));
@@ -338,7 +349,7 @@ Respon dalam format JSON dengan struktur:
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Update local state
         setSystemPrompts(prev => [...prev, result.data]);
@@ -372,15 +383,15 @@ Respon dalam format JSON dengan struktur:
         });
 
         const result = await response.json();
-        
+
         if (result.success) {
           // Update local state
           setSystemPrompts(prev => prev.filter(p => p.id !== promptId));
-          
+
           if (selectedPrompt?.id === promptId) {
             setSelectedPrompt(null);
           }
-          
+
           setEditingPrompt(null);
         } else {
           alert('Gagal menghapus prompt: ' + result.error);
@@ -408,14 +419,14 @@ Respon dalam format JSON dengan struktur:
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Update local state
-        setSystemPrompts(prev => prev.map(p => ({ 
-          ...p, 
-          is_active: p.id === promptId 
+        setSystemPrompts(prev => prev.map(p => ({
+          ...p,
+          is_active: p.id === promptId
         })));
-        
+
         setSelectedPrompt(result.data);
       } else {
         alert('Gagal mengaktifkan prompt: ' + result.error);
@@ -435,51 +446,51 @@ Respon dalam format JSON dengan struktur:
 
   // Availability Cards Component
   const AvailabilityCards = ({ data }: { data: any }) => {
-    
-    const handleSlotClick = (field: any, date: string, timeSlot: string) => {
-       const isSameContext = bookingForm.field === field.id && bookingForm.date === date;
 
-       if (!isSameContext) {
-         // New context, reset and start new
-         setBookingForm(prev => ({
-           ...prev,
-           sport: data.sport.code,
-           field: field.id,
-           date: date,
-           fieldName: field.name,
-           fieldPrice: field.price,
-         }));
-         setSelectedTimes([timeSlot]);
-       } else {
-         // Same context, toggle slot
-         if (selectedTimes.includes(timeSlot)) {
-           setSelectedTimes(selectedTimes.filter(t => t !== timeSlot));
-         } else {
-           setSelectedTimes([...selectedTimes, timeSlot]);
-         }
-       }
+    const handleSlotClick = (field: any, date: string, timeSlot: string) => {
+      const isSameContext = bookingForm.field === field.id && bookingForm.date === date;
+
+      if (!isSameContext) {
+        // New context, reset and start new
+        setBookingForm(prev => ({
+          ...prev,
+          sport: data.sport.code,
+          field: field.id,
+          date: date,
+          fieldName: field.name,
+          fieldPrice: field.price,
+        }));
+        setSelectedTimes([timeSlot]);
+      } else {
+        // Same context, toggle slot
+        if (selectedTimes.includes(timeSlot)) {
+          setSelectedTimes(selectedTimes.filter(t => t !== timeSlot));
+        } else {
+          setSelectedTimes([...selectedTimes, timeSlot]);
+        }
+      }
     };
 
     const handleDirectBooking = () => {
-        const summaryMessage: Message = {
-            id: Date.now().toString(),
-            content: "Baik, silakan lengkapi data berikut untuk menyelesaikan pemesanan:",
-            sender: 'ai',
-            timestamp: new Date(),
-            actions: [{
-                type: 'inline_booking_form',
-                data: {
-                    ...bookingForm,
-                    selectedTimes: [...selectedTimes],
-                    totalPrice: bookingForm.fieldPrice * selectedTimes.length
-                }
-            }]
-        };
-        setMessages(prev => [...prev, summaryMessage]);
-        // Optional: clear selection or keep it. 
-        // If we clear, the UI updates. Let's keep it for visual context or clear it if we want to force focus on the form.
-        // Clearing it might be better to prevent confusion if they scroll back up and click "Booking" again with different slots.
-        setSelectedTimes([]); 
+      const summaryMessage: Message = {
+        id: Date.now().toString(),
+        content: "Baik, silakan lengkapi data berikut untuk menyelesaikan pemesanan:",
+        sender: 'ai',
+        timestamp: new Date(),
+        actions: [{
+          type: 'inline_booking_form',
+          data: {
+            ...bookingForm,
+            selectedTimes: [...selectedTimes],
+            totalPrice: bookingForm.fieldPrice * selectedTimes.length
+          }
+        }]
+      };
+      setMessages(prev => [...prev, summaryMessage]);
+      // Optional: clear selection or keep it. 
+      // If we clear, the UI updates. Let's keep it for visual context or clear it if we want to force focus on the form.
+      // Clearing it might be better to prevent confusion if they scroll back up and click "Booking" again with different slots.
+      setSelectedTimes([]);
     };
 
     if (!data.availability || data.availability.length === 0) {
@@ -514,63 +525,65 @@ Respon dalam format JSON dengan struktur:
                 </div>
               </div>
             </div>
-            
+
             <div className="p-4 space-y-3">
               {dateData.fields.map((field: any) => {
                 const isContextMatch = bookingForm.field === field.id && bookingForm.date === dateData.date;
                 const hasSelection = isContextMatch && selectedTimes.length > 0;
 
                 return (
-                <div key={field.id} className="bg-[#1a1a1a] rounded-lg p-3 border border-white/5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-1 sm:gap-0">
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
-                      <span className="font-medium text-white text-xs sm:text-base">{field.name}</span>
-                      {field.offlineMode && (
-                        <span className="px-2 py-1 bg-yellow-600/20 text-yellow-400 rounded text-[10px] sm:text-xs">Offline</span>
-                      )}
+                  <div key={field.id} className="bg-[#1a1a1a] rounded-lg p-3 border border-white/5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-1 sm:gap-0">
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-green-400" />
+                        <span className="font-medium text-white text-xs sm:text-base">{field.name}</span>
+                        {field.offlineMode && (
+                          <span className="px-2 py-1 bg-yellow-600/20 text-yellow-400 rounded text-[10px] sm:text-xs">Offline</span>
+                        )}
+                      </div>
+                      <div className="text-green-400 font-medium text-[10px] sm:text-base whitespace-nowrap sm:text-right pl-5 sm:pl-0">
+                        Rp {field.price.toLocaleString('id-ID')}/jam
+                      </div>
                     </div>
-                    <div className="text-green-400 font-medium text-[10px] sm:text-base whitespace-nowrap sm:text-right pl-5 sm:pl-0">
-                      Rp {field.price.toLocaleString('id-ID')}/jam
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 mb-3">
-                    {field.allSlots.map((timeSlot: string) => {
+
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 mb-3">
+                      {field.allSlots.map((timeSlot: string) => {
                         const isSelected = isContextMatch && selectedTimes.includes(timeSlot);
                         const isAvailable = field.availableSlots.includes(timeSlot);
-                        
-                        return (
-                      <button
-                        key={timeSlot}
-                        onClick={() => isAvailable && handleSlotClick(field, dateData.date, timeSlot)}
-                        disabled={!isAvailable}
-                        className={`px-2 py-1 rounded text-xs transition-all border flex items-center justify-center
-                          ${!isAvailable 
-                            ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed opacity-50 border-transparent' 
-                            : isSelected
-                            ? 'bg-gradient-to-r from-blue-600 to-red-600 text-white scale-105 border-transparent shadow-lg'
-                            : 'bg-[#333333] text-gray-300 hover:bg-white/10 hover:text-white border-white/10'
-                          }`}
-                      >
-                        {timeSlot}
-                      </button>
-                    )})}
-                  </div>
 
-                  {hasSelection && (
-                      <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                        return (
                           <button
-                            onClick={handleDirectBooking}
-                            className="w-full py-2 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all shadow-lg flex items-center justify-center space-x-2"
+                            key={timeSlot}
+                            onClick={() => isAvailable && handleSlotClick(field, dateData.date, timeSlot)}
+                            disabled={!isAvailable}
+                            className={`px-2 py-1 rounded text-xs transition-all border flex items-center justify-center
+                          ${!isAvailable
+                                ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed opacity-50 border-transparent'
+                                : isSelected
+                                  ? 'bg-gradient-to-r from-blue-600 to-red-600 text-white scale-105 border-transparent shadow-lg'
+                                  : 'bg-[#333333] text-gray-300 hover:bg-white/10 hover:text-white border-white/10'
+                              }`}
                           >
-                            <span>Booking Langsung di Chat ({selectedTimes.length} slot)</span>
-                            <ArrowRight className="h-4 w-4" />
+                            {timeSlot}
                           </button>
+                        )
+                      })}
+                    </div>
+
+                    {hasSelection && (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                        <button
+                          onClick={handleDirectBooking}
+                          className="w-full py-2 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg text-sm font-medium transition-all shadow-lg flex items-center justify-center space-x-2"
+                        >
+                          <span>Booking Langsung di Chat ({selectedTimes.length} slot)</span>
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
                       </div>
-                  )}
-                </div>
-              )})}
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         ))}
@@ -629,7 +642,7 @@ Respon dalam format JSON dengan struktur:
               <span className="text-blue-400 font-bold text-xs uppercase tracking-wider">{data.sport}</span>
             </div>
           </div>
-            
+
           <div className="flex flex-wrap gap-2 my-3">
             {data.selectedTimes.map((time: string) => (
               <span key={time} className="px-3 py-1 bg-[#333333] text-gray-300 rounded-md text-xs border border-white/10 font-mono">
@@ -651,7 +664,7 @@ Respon dalam format JSON dengan struktur:
             alert('Mohon lengkapi Nama dan No WhatsApp');
             return;
           }
-            
+
           setIsSubmitting(true);
           try {
             const response = await fetch('/api/ai-chat/booking', {
@@ -672,7 +685,7 @@ Respon dalam format JSON dengan struktur:
             if (response.ok) {
               setIsSuccess(true);
               setBookingResult(result.data);
-              
+
               const successMsg: Message = {
                 id: Date.now().toString(),
                 content: `✅ **Booking Sukses!**\n\nHalo ${name}, booking Anda di ${data.fieldName} berhasil dikonfirmasi.`,
@@ -696,8 +709,8 @@ Respon dalam format JSON dengan struktur:
                 <UserIcon className="w-3 h-3 mr-1.5" />
                 Nama Lengkap
               </label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Masukkan nama Anda..."
@@ -710,8 +723,8 @@ Respon dalam format JSON dengan struktur:
                 <Phone className="w-3 h-3 mr-1.5" />
                 No. WhatsApp
               </label>
-              <input 
-                type="tel" 
+              <input
+                type="tel"
                 value={whatsapp}
                 onChange={e => setWhatsapp(e.target.value)}
                 placeholder="08xxx..."
@@ -719,8 +732,8 @@ Respon dalam format JSON dengan struktur:
                 required
               />
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isSubmitting}
               className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 mt-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center transform hover:scale-[1.02] active:scale-[0.98]"
             >
@@ -754,7 +767,7 @@ Respon dalam format JSON dengan struktur:
       if (action.data?.timeSlot) params.set('timeSlot', action.data.timeSlot);
       if (action.data?.field) params.set('field', action.data.field);
       if (action.data?.timeRange) params.set('timeRange', action.data.timeRange);
-      
+
       window.location.href = `/booking?${params.toString()}`;
     } else if (action.type === 'redirect') {
       window.location.href = action.url;
@@ -799,7 +812,7 @@ Respon dalam format JSON dengan struktur:
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             {/* Add New Prompt Section */}
             <div className="bg-[#333333] rounded-xl p-4 mb-6">
               <div className="flex items-center justify-between mb-3">
@@ -823,7 +836,7 @@ Respon dalam format JSON dengan struktur:
                   </button>
                 )}
               </div>
-              
+
               {showAddPrompt && (
                 <div className="border-t border-white/10 pt-3">
                   <div className="flex items-center space-x-3">
@@ -845,7 +858,7 @@ Respon dalam format JSON dengan struktur:
                 </div>
               )}
             </div>
-            
+
             {/* Prompts List */}
             <div className="space-y-4">
               {systemPrompts.map(prompt => (
@@ -865,11 +878,10 @@ Respon dalam format JSON dengan struktur:
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => handleActivatePrompt(prompt.id)}
-                          className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                            prompt.is_active
+                          className={`px-3 py-1 rounded-lg text-sm transition-colors ${prompt.is_active
                               ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                               : 'bg-blue-600 hover:bg-blue-700 text-white'
-                          }`}
+                            }`}
                         >
                           {prompt.is_active ? 'Deactivate' : 'Activate'}
                         </button>
@@ -881,11 +893,10 @@ Respon dalam format JSON dengan struktur:
                         </button>
                         <button
                           onClick={() => handleDeletePrompt(prompt.id)}
-                          className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                            prompt.id === 'default'
+                          className={`px-3 py-1 rounded-lg text-sm transition-colors ${prompt.id === 'default'
                               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                               : 'bg-red-600 hover:bg-red-700 text-white'
-                          }`}
+                            }`}
                           disabled={prompt.id === 'default'}
                         >
                           Delete
@@ -893,7 +904,7 @@ Respon dalam format JSON dengan struktur:
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Prompt Editor */}
                   <div className="p-4">
                     {editingPrompt?.id === prompt.id ? (
@@ -923,7 +934,7 @@ Respon dalam format JSON dengan struktur:
                         />
                         {(prompt.CreatedBy?.username || prompt.CreatedBy?.full_name) && (
                           <div className="text-xs text-gray-500 mt-2">
-                            Created by: {prompt.CreatedBy.full_name} ({prompt.CreatedBy.username}) | 
+                            Created by: {prompt.CreatedBy.full_name} ({prompt.CreatedBy.username}) |
                             Last updated: {new Date(prompt.updated_at).toLocaleString()}
                           </div>
                         )}
@@ -943,7 +954,7 @@ Respon dalam format JSON dengan struktur:
                 </div>
               ))}
             </div>
-            
+
             {systemPrompts.length === 0 && (
               <div className="text-center py-8 text-gray-400">
                 <Settings className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -965,11 +976,10 @@ Respon dalam format JSON dengan struktur:
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`${message.sender === 'ai' ? 'max-w-full' : 'max-w-[85%]'} sm:max-w-[80%] rounded-2xl p-3 sm:p-4 ${
-                    message.sender === 'user'
+                  className={`${message.sender === 'ai' ? 'max-w-full' : 'max-w-[85%]'} sm:max-w-[80%] rounded-2xl p-3 sm:p-4 ${message.sender === 'user'
                       ? 'bg-blue-600 text-white'
                       : 'bg-[#333333] text-gray-300 border border-white/10'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start space-x-2 sm:space-x-3">
                     {message.sender === 'ai' && (
@@ -992,41 +1002,41 @@ Respon dalam format JSON dengan struktur:
                                 <div className="w-full overflow-x-auto">
                                   <AvailabilityCards data={action.data} />
                                 </div>
-                              ) 
-                              : action.type === 'inline_booking_form' ? (
-                                <InlineBookingForm data={action.data} />
-                              ) 
-                              : action.type === 'booking_form' ? (
-                                <button
-                                  onClick={() => {
-                                    setShowBookingForm(true);
-                                    setBookingForm({
-                                      customer_name: '',
-                                      whatsapp_number: '',
-                                      sport: action.data.sport.code,
-                                      field: '',
-                                      date: '',
-                                      fieldName: '',
-                                      fieldPrice: 0,
-                                      allBookedSlots: []
-                                    });
-                                    setBookingStep('form');
-                                  }}
-                                  className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg text-sm transition-all"
-                                >
-                                  <span>{action.label}</span>
-                                  <ArrowRight className="h-3 w-3" />
-                                </button>
                               )
-                              : (
-                                <button
-                                  onClick={() => handleActionClick(action)}
-                                  className="inline-flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors"
-                                >
-                                  <span>{action.label}</span>
-                                  <ArrowRight className="h-3 w-3" />
-                                </button>
-                              )
+                                : action.type === 'inline_booking_form' ? (
+                                  <InlineBookingForm data={action.data} />
+                                )
+                                  : action.type === 'booking_form' ? (
+                                    <button
+                                      onClick={() => {
+                                        setShowBookingForm(true);
+                                        setBookingForm({
+                                          customer_name: '',
+                                          whatsapp_number: '',
+                                          sport: action.data.sport.code,
+                                          field: '',
+                                          date: '',
+                                          fieldName: '',
+                                          fieldPrice: 0,
+                                          allBookedSlots: []
+                                        });
+                                        setBookingStep('form');
+                                      }}
+                                      className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg text-sm transition-all"
+                                    >
+                                      <span>{action.label}</span>
+                                      <ArrowRight className="h-3 w-3" />
+                                    </button>
+                                  )
+                                    : (
+                                      <button
+                                        onClick={() => handleActionClick(action)}
+                                        className="inline-flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors"
+                                      >
+                                        <span>{action.label}</span>
+                                        <ArrowRight className="h-3 w-3" />
+                                      </button>
+                                    )
                               }
                             </div>
                           ))}
@@ -1037,7 +1047,7 @@ Respon dalam format JSON dengan struktur:
                 </div>
               </div>
             ))}
-            
+
             {/* Loading Indicator */}
             {isLoading && (
               <div className="flex justify-start">
@@ -1055,7 +1065,7 @@ Respon dalam format JSON dengan struktur:
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -1079,7 +1089,7 @@ Respon dalam format JSON dengan struktur:
                 <Send className="h-5 w-5" />
               </button>
             </div>
-            
+
             {/* Quick Actions */}
             <div className="mt-4 flex flex-wrap gap-2">
               <button

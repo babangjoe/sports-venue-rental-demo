@@ -1,0 +1,560 @@
+[
+  {
+    "id": "TC001",
+    "title": "Successful User Login",
+    "description": "Verify that a user can log in successfully with valid username and password, receiving a JWT token and HTTP-only cookie.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page"
+      },
+      {
+        "type": "action",
+        "description": "Input valid username and password"
+      },
+      {
+        "type": "action",
+        "description": "Click login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that response status is 200 and JWT token is set in HTTP-only cookie"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user information is returned in response"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Login Failure with Missing Credentials",
+    "description": "Verify that login fails with a 400 response if username or password is missing.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page"
+      },
+      {
+        "type": "action",
+        "description": "Submit login with missing username or password"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that response status is 400 with appropriate error message"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Login Failure with Invalid Credentials",
+    "description": "Verify that login fails with a 401 response when username or password is invalid.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page"
+      },
+      {
+        "type": "action",
+        "description": "Enter invalid username or password"
+      },
+      {
+        "type": "action",
+        "description": "Click login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that response status is 401 with invalid credentials message"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Create New Booking Successfully",
+    "description": "Verify that a customer can create a new booking with valid field, date, multiple time slots, and customer details and receive confirmation.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to booking page"
+      },
+      {
+        "type": "action",
+        "description": "Select sport category"
+      },
+      {
+        "type": "action",
+        "description": "Select specific field by field code"
+      },
+      {
+        "type": "action",
+        "description": "Pick a valid booking date with available slots"
+      },
+      {
+        "type": "action",
+        "description": "Select one or more available time slots"
+      },
+      {
+        "type": "action",
+        "description": "Enter customer name, phone, and email"
+      },
+      {
+        "type": "action",
+        "description": "Submit booking request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that booking is created with 201 status"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm booking details are correct and booking summary is returned"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Booking Creation Prevents Double Booking",
+    "description": "Verify that booking creation fails with a 409 response if selected time slots are already booked preventing double-booking.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to create a booking with time slots already booked for selected field and date"
+      },
+      {
+        "type": "action",
+        "description": "Submit booking request"
+      },
+      {
+        "type": "assertion",
+        "description": "Check response status is 409 indicating time slot conflict"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error message indicates time slot conflict"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Fetch Bookings Filtering by Field, Date, and Status",
+    "description": "Validate that bookings API returns correct results when filtered by field ID, date, and status.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to bookings API with fieldId filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify returned bookings belong to specified field"
+      },
+      {
+        "type": "action",
+        "description": "Send GET request with date filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify returned bookings match specified date"
+      },
+      {
+        "type": "action",
+        "description": "Send GET request with status filter (e.g. confirmed, pending)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify bookings have the requested status"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Create New Sport Category Successfully",
+    "description": "Verify that admin can create a sport category with required fields sport_name and sport_type and optional description and availability.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to sports API with valid sport_name and sport_type"
+      },
+      {
+        "type": "action",
+        "description": "Include optional description and is_available flag"
+      },
+      {
+        "type": "assertion",
+        "description": "Check response status is 201 and sport category is created"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Get All Available Sports",
+    "description": "Verify that GET /api/sports returns a list of sports with optional show_all query to filter availability.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /api/sports without query"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify list of all sports is returned"
+      },
+      {
+        "type": "action",
+        "description": "Send GET with show_all=false to fetch only available sports"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify returned sports have is_available = true"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Create, Update, Delete Sports Field with Image Upload",
+    "description": "Verify CRUD operations on fields API including field creation with required fields, updating details including image URLs, and deleting fields.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to fields API with required field_name, field_code, sport_id, price_per_hour"
+      },
+      {
+        "type": "action",
+        "description": "Include optional description, url_image, and is_available"
+      },
+      {
+        "type": "assertion",
+        "description": "Check response status 201 and field created"
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to fields API with filter isAvailable=true"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify returned fields have is_available true"
+      },
+      {
+        "type": "action",
+        "description": "Send PUT request to update field information including new image URL"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify field data is updated successfully"
+      },
+      {
+        "type": "action",
+        "description": "Send DELETE request to remove a field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify field is deleted and no longer returned on GET"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Role-based Access Control on Administrative Endpoints",
+    "description": "Ensure that sports category, fields management, and booking approval actions require authentication and correct role permissions.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to create sports category without authentication"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied (401 or 403)"
+      },
+      {
+        "type": "action",
+        "description": "Login as non-admin user and attempt to manage fields or approve bookings"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied due to insufficient permissions"
+      },
+      {
+        "type": "action",
+        "description": "Login as admin and perform CRUD operations"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify operations succeed"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Cashier POS Payment Processing Validations",
+    "description": "Verify cashier point-of-sale accepts payments for bookings and F&B items, validates cash input, calculates change accurately, and generates invoice.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Add booking and food & beverage items to multi-tab cart"
+      },
+      {
+        "type": "action",
+        "description": "Enter cash amount less than total price"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation error is shown for insufficient cash"
+      },
+      {
+        "type": "action",
+        "description": "Enter cash amount equal to total price"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify payment accepted with zero change"
+      },
+      {
+        "type": "action",
+        "description": "Enter cash amount greater than total price"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify change is correctly calculated and displayed"
+      },
+      {
+        "type": "action",
+        "description": "Complete payment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify booking status updated and invoice is generated"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Revenue and Booking Analytics Visualization Accuracy",
+    "description": "Verify that the admin dashboard shows accurate revenue overview, booking trends, and allows filtering by date range and sport category.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access admin dashboard revenue and booking trends charts"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify data matches database revenue and booking records"
+      },
+      {
+        "type": "action",
+        "description": "Apply time period filters (e.g., last month, last year)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify charts update accordingly with filtered data"
+      },
+      {
+        "type": "action",
+        "description": "Filter by sport type"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify displayed data corresponds to selected sport only"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "AI Assistant Booking Query Handling",
+    "description": "Verify that the AI assistant chatbot correctly understands and responds to booking-related queries and general venue information.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open AI assistant chat interface"
+      },
+      {
+        "type": "action",
+        "description": "Ask about booking a specific sport or field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify assistant provides correct booking instructions or availability"
+      },
+      {
+        "type": "action",
+        "description": "Inquire about general venue information (e.g., location, operating hours)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify AI provides accurate information from venue data"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Booking Multi-slot Time Selection Edge Cases",
+    "description": "Verify system behavior when selecting multiple contiguous and non-contiguous time slots for booking.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Select multiple contiguous available time slots for a booking"
+      },
+      {
+        "type": "action",
+        "description": "Submit booking"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify booking is successful and time slots reserved accordingly"
+      },
+      {
+        "type": "action",
+        "description": "Select multiple non-contiguous time slots (e.g., 9-10am and 12-1pm)"
+      },
+      {
+        "type": "action",
+        "description": "Submit booking"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify booking creation either allowed or appropriately validated (depending on business rule)"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Booking with Invalid or Past Dates",
+    "description": "Verify booking creation fails or is restricted when a past date or invalid date format is submitted.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to create booking with a date before current date"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify booking request is rejected with validation error"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to create booking with invalid date format"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify API returns 400 error with descriptive message"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Customer Info Validation on Booking Submission",
+    "description": "Verify validation rules for booking customer info fields: name, phone, and email.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Submit booking with missing customer name"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify request is rejected for missing required fields"
+      },
+      {
+        "type": "action",
+        "description": "Submit booking with invalid phone number format"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation error returned"
+      },
+      {
+        "type": "action",
+        "description": "Submit booking with invalid email format"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation error returned"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Sports and Fields Listing with Image and Pricing Display",
+    "description": "Verify that the customer-facing landing and booking pages correctly display sports categories, venue fields with images, pricing, and availability status.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open landing page and booking interface"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify sport categories are listed with correct names and descriptions"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify fields show images and price per hour"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify fields marked unavailable are not selectable"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Session and JWT Token Security",
+    "description": "Verify that authentication tokens are issued securely via HTTP-only cookies and that protected routes validate JWT for session management.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and inspect cookies set by server"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify JWT token is stored in HTTP-only cookie"
+      },
+      {
+        "type": "action",
+        "description": "Access a protected admin endpoint without authentication"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied"
+      },
+      {
+        "type": "action",
+        "description": "Access admin endpoint with valid JWT cookie"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access granted"
+      }
+    ]
+  }
+]

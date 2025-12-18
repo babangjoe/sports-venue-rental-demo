@@ -1,7 +1,19 @@
 import { NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import {
+  getSportById,
+  updateSport,
+  deleteSport,
+  getFields,
+} from '@/lib/demoStore';
 
-// Ensure this route is not statically generated
+/**
+ * DEMO MODE: Sports [id] API
+ * 
+ * - GET: Reads from localStorage
+ * - PUT: Updates localStorage ONLY
+ * - DELETE: Deletes from localStorage ONLY
+ */
+
 export const dynamic = 'force-dynamic';
 
 // PUT: Update a sport
@@ -9,7 +21,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   try {
     const sportId = parseInt(params.id);
     const body = await request.json();
-    
+
     const {
       sport_name,
       sport_type,
@@ -25,21 +37,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    const { data: updatedSport, error } = await supabase
-      .from('sports')
-      .update({
-        sport_name,
-        sport_type,
-        description: description || null,
-        is_available: is_available ? 1 : 0,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', sportId)
-      .select()
-      .single();
+    // DEMO MODE: Update in localStorage only
+    const updatedSport = updateSport(sportId, {
+      sport_name,
+      sport_type,
+      description: description || null,
+      is_available: is_available ? 1 : 0,
+    });
 
-    if (error || !updatedSport) {
-       return new Response(
+    if (!updatedSport) {
+      return new Response(
         JSON.stringify({ error: 'Sport not found or update failed' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
       );
@@ -64,27 +71,20 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   try {
     const sportId = parseInt(params.id);
 
-    // Check if sport has any fields
-    const { count, error: countError } = await supabase
-      .from('fields')
-      .select('*', { count: 'exact', head: true })
-      .eq('sport_id', sportId);
+    // Check if sport has any fields (from localStorage)
+    const fields = getFields({ sportId });
 
-    if (countError) throw countError;
-    
-    if (count && count > 0) {
+    if (fields.length > 0) {
       return new Response(
         JSON.stringify({ error: 'Cannot delete sport with existing fields. Please delete all related fields first.' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    const { error: deleteError } = await supabase
-      .from('sports')
-      .delete()
-      .eq('id', sportId);
+    // DEMO MODE: Delete from localStorage only
+    const deleted = deleteSport(sportId);
 
-    if (deleteError) {
+    if (!deleted) {
       return new Response(
         JSON.stringify({ error: 'Sport not found or delete failed' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }
@@ -108,13 +108,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const sportId = parseInt(params.id);
-    const { data: sport, error } = await supabase
-      .from('sports')
-      .select('*')
-      .eq('id', sportId)
-      .single();
 
-    if (error || !sport) {
+    // DEMO MODE: Read from localStorage
+    const sport = getSportById(sportId);
+
+    if (!sport) {
       return new Response(
         JSON.stringify({ error: 'Sport not found' }),
         { status: 404, headers: { 'Content-Type': 'application/json' } }

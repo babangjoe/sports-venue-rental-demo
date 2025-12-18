@@ -1,19 +1,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Menu, X, Calendar, ChevronDown, LogOut, MessageCircle } from 'lucide-react';
+import { Menu, X, Calendar, ChevronDown, LogOut, MessageCircle, RefreshCcw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDemoContext } from '@/contexts/DemoContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const { user, logout } = useAuth();
+  const { resetDemo } = useDemoContext();
   const pathname = usePathname();
 
   const isCashier = user?.role && ['kasir', 'cashier', 'staff kasir', 'Kasir', 'Cashier', 'Staff Kasir'].includes(user.role);
+
+  const handleResetDemo = async () => {
+    if (confirm('Reset semua data demo ke kondisi awal? Perubahan yang Anda buat akan hilang.')) {
+      setIsResetting(true);
+      await resetDemo();
+      setIsResetting(false);
+      window.location.reload();
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -60,7 +72,7 @@ export default function Navbar() {
               <Link href="/#events" className="text-gray-300 hover:text-white font-medium transition-colors">
                 Events
               </Link>
-              { user ? (
+              {user ? (
                 <div className="relative admin-dropdown">
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -142,7 +154,16 @@ export default function Navbar() {
           </div>
 
           {/* CTA Button - Desktop */}
-          <div className="hidden lg:block">
+          <div className="hidden lg:flex items-center space-x-3">
+            <button
+              onClick={handleResetDemo}
+              disabled={isResetting}
+              className="flex items-center text-gray-400 hover:text-orange-400 font-medium transition-colors text-sm px-3 py-2 rounded-lg hover:bg-white/5"
+              title="Reset Demo Data"
+            >
+              <RefreshCcw className={`h-4 w-4 mr-1 ${isResetting ? 'animate-spin' : ''}`} />
+              {isResetting ? 'Resetting...' : 'Reset Demo'}
+            </button>
             <Link href="/booking" className="bg-white text-black px-6 py-2 rounded-full font-bold hover:bg-gray-200 transition-colors shadow-lg inline-block">
               Book Now
             </Link>
@@ -229,6 +250,17 @@ export default function Navbar() {
               <Link href="/#contact" onClick={() => handleNavClick('#contact')} className="block text-gray-300 hover:text-emerald-600 font-medium py-2">
                 Contact
               </Link>
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  handleResetDemo();
+                }}
+                disabled={isResetting}
+                className="flex items-center w-full text-orange-400 hover:bg-orange-500/10 font-medium py-2 rounded-lg transition-colors mt-2"
+              >
+                <RefreshCcw className={`h-4 w-4 mr-2 ${isResetting ? 'animate-spin' : ''}`} />
+                {isResetting ? 'Resetting...' : 'Reset Demo Data'}
+              </button>
               <Link href="/booking" className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-2xl font-semibold mt-3 inline-block text-center">
                 Booking Sekarang
               </Link>
